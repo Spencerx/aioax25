@@ -479,18 +479,18 @@ def test_dispatch_rx_valid_port():
     assert port.frames[0] is frame
 
 
-def test_send_emptybuf():
+def test_send():
     """
-    Test that _send adds a FEND then our packet followed by a FEND before
-    scheduling a _send_data when TX buffer is empty.
+    Test that _send appends a frame to the transmit queue then schedules
+    _send_data to transmit it.
     """
     LOOPMANAGER.loop = None
 
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
 
-    # Buffer should be empty
-    assert bytes(kissdev._tx_buffer) == b""
+    # Queue should be empty
+    assert kissdev._tx_queue == []
 
     # Make a dummy frame object to enqueue
     class MyFrame(object):
@@ -500,30 +500,32 @@ def test_send_emptybuf():
         def __bytes__(self):
             return self._data.encode()
 
-    # Enqueue a frame
+    # Enqueue a frame, without a future
     kissdev._send(MyFrame("testing 1 2 3 4"))
 
     # The frame should now be in the TX buffer
-    assert bytes(kissdev._tx_buffer) == b"\xc0testing 1 2 3 4\xc0"
+    assert kissdev._tx_queue == [(b"testing 1 2 3 4", None)]
 
     # We should have a call to _send_data scheduled.
     (_, func) = loop.calls.pop(0)
     assert func == kissdev._send_data
 
 
-def test_send_txdata_no_fend():
+def test_send_future():
     """
-    Test that _send adds a FEND then our packet followed by a FEND before
-    scheduling a _send_data when existing TX buffer does not end in FEND.
+    Test that _send with a future, stores the future with the frame to send.
     """
     LOOPMANAGER.loop = None
 
+    class DummyFuture(object):
+        pass
+
+    future = DummyFuture()
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
 
-    # Enqueue some dummy data *not* ending in FEND
-    assert bytes(kissdev._tx_buffer) == b""
-    kissdev._tx_buffer += b"\xc0testing 1 2 3 4"
+    # Queue should be empty
+    assert kissdev._tx_queue == []
 
     # Make a dummy frame object to enqueue
     class MyFrame(object):
@@ -533,86 +535,11 @@ def test_send_txdata_no_fend():
         def __bytes__(self):
             return self._data.encode()
 
-    # Enqueue a frame
-    kissdev._send(MyFrame("testing 5 6 7 8"))
+    # Enqueue a frame, without a future
+    kissdev._send(MyFrame("testing 1 2 3 4"), future)
 
-    # The frame should now be in the TX buffer, along with the other.
-    # There should be a FEND in between.
-    assert (
-        bytes(kissdev._tx_buffer)
-        == b"\xc0testing 1 2 3 4\xc0testing 5 6 7 8\xc0"
-    )
-
-    # We should have a call to _send_data scheduled.
-    (_, func) = loop.calls.pop(0)
-    assert func == kissdev._send_data
-
-
-def test_send_txdata_with_fend():
-    """
-    Test that _send adds our packet followed by a FEND before
-    scheduling a _send_data when TX buffer ends in FEND.
-    """
-    LOOPMANAGER.loop = None
-
-    loop = DummyLoop()
-    kissdev = DummyKISSDevice(loop=loop)
-
-    # Enqueue some dummy data *not* ending in FEND
-    assert bytes(kissdev._tx_buffer) == b""
-    kissdev._tx_buffer += b"\xc0testing 1 2 3 4\xc0"
-
-    # Make a dummy frame object to enqueue
-    class MyFrame(object):
-        def __init__(self, data):
-            self._data = data
-
-        def __bytes__(self):
-            return self._data.encode()
-
-    # Enqueue a frame
-    kissdev._send(MyFrame("testing 5 6 7 8"))
-
-    # The frame should now be in the TX buffer, along with the other.
-    # There should be a FEND in between.
-    assert (
-        bytes(kissdev._tx_buffer)
-        == b"\xc0testing 1 2 3 4\xc0testing 5 6 7 8\xc0"
-    )
-
-    # We should have a call to _send_data scheduled.
-    (_, func) = loop.calls.pop(0)
-    assert func == kissdev._send_data
-
-
-def test_send_txdata_with_fend():
-    """
-    Test that _send adds our packet followed by a FEND before
-    scheduling a _send_data when TX buffer only contains FEND.
-    """
-    LOOPMANAGER.loop = None
-
-    loop = DummyLoop()
-    kissdev = DummyKISSDevice(loop=loop)
-
-    # Enqueue a FEND
-    assert bytes(kissdev._tx_buffer) == b""
-    kissdev._tx_buffer += b"\xc0"
-
-    # Make a dummy frame object to enqueue
-    class MyFrame(object):
-        def __init__(self, data):
-            self._data = data
-
-        def __bytes__(self):
-            return self._data.encode()
-
-    # Enqueue a frame
-    kissdev._send(MyFrame("testing 5 6 7 8"))
-
-    # The frame should now be in the TX buffer, along with the other.
-    # There should be a FEND in between.
-    assert bytes(kissdev._tx_buffer) == b"\xc0testing 5 6 7 8\xc0"
+    # The frame should now be in the TX buffer
+    assert kissdev._tx_queue == [(b"testing 1 2 3 4", future)]
 
     # We should have a call to _send_data scheduled.
     (_, func) = loop.calls.pop(0)
@@ -653,6 +580,7 @@ def test_send_data_emptybuffer():
     Test that _send_data will pick the next frame off the transmit queue if
     it has nothing to send in the buffer.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
     my_future = Future()
@@ -687,6 +615,7 @@ def test_send_data_emptybuffer_emptyqueue():
     """
     Test that _send_data does nothing if all queues are empty.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
     assert bytes(kissdev._tx_buffer) == b""
