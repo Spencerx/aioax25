@@ -328,7 +328,7 @@ The background is this:
 2. Training these models requires vast amounts of data, desperation for such
    data has meant the operators of these systems launch scraper bots with
    veratious data appetites.  These
-   ["Johnny-5"-eseque](https://en.wikipedia.org/wiki/Short_Circuit_(1986_film)
+   ["Johnny-5"-eseque](https://en.wikipedia.org/wiki/Short_Circuit_%281986_film%29)
    bots cause distributed denial of service attacks and in my case, even
    [triggered an over-temperature alarm in my equipment](https://mastodon.longlandclan.id.au/@stuartl/115530774260382195)
    due to excessive and wasteful source code requests.
