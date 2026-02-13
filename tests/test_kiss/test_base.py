@@ -240,6 +240,27 @@ def test_receive():
     assert func == kissdev._receive_frame
 
 
+def test_receive_opening():
+    """
+    Test that a call to _receive whilst in "OPENING" state stashes the data then schedules _check_open.
+    """
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
+
+    # Inject the state
+    kissdev._state = KISSDeviceState.OPENING
+
+    # Pass the data in
+    kissdev._receive(b"test incoming data")
+
+    # Data should be waiting
+    assert bytes(kissdev._rx_buffer) == b"test incoming data"
+
+    # A call to _check_open should be pending
+    (_, func) = loop.calls.pop()
+    assert func == kissdev._check_open
+
+
 def test_receive_frame_garbage():
     """
     Test _receive_frame discards all data when no FEND byte found.
