@@ -39,9 +39,9 @@ jobs:
   test:
     runs-on: ${{ inputs.platform }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ inputs.python-version }}
           allow-prereleases: true
