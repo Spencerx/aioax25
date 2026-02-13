@@ -32,6 +32,31 @@ class DummyKISSDevice(BaseKISSDevice):
         self.transmitted += data
 
 
+class DummyKISSDeviceError(IOError):
+    pass
+
+
+class FailingKISSDevice(BaseKISSDevice):
+    def __init__(self, **kwargs):
+        super(FailingKISSDevice, self).__init__(**kwargs)
+
+        self.transmitted = bytearray()
+        self.open_calls = 0
+        self.close_calls = 0
+
+    def _open(self):
+        self.open_calls += 1
+        raise DummyKISSDeviceError("Open fails")
+
+    def _close(self):
+        self.close_calls += 1
+        raise DummyKISSDeviceError("Close fails")
+
+    def _send_raw_data(self, data):
+        self.transmitted += data
+        raise DummyKISSDeviceError("Send fails")
+
+
 def test_constructor_own_loop():
     """
     Test constructor uses its own IOLoop if not given one
@@ -47,10 +72,52 @@ def test_open():
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
 
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
     assert kissdev.open_calls == 0
     kissdev.open()
 
     assert kissdev.open_calls == 1
+
+    assert failures == []
+
+
+def test_open_fail():
+    """
+    Test an open call that fails triggers the failed signal
+    """
+    loop = DummyLoop()
+    kissdev = FailingKISSDevice(loop=loop)
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
+    assert kissdev.open_calls == 0
+    try:
+        kissdev.open()
+        open_ex = None
+    except DummyKISSDeviceError as e:
+        assert str(e) == "Open fails"
+        open_ex = e
+
+    assert kissdev.open_calls == 1
+    assert kissdev.state == KISSDeviceState.FAILED
+    assert len(failures) == 1
+    failure = failures.pop(0)
+
+    assert failure.pop("action") == "open"
+    (ex_c, ex_v, _) = failure.pop("exc_info")
+    assert ex_c is DummyKISSDeviceError
+    assert ex_v is open_ex
 
 
 def test_close():
@@ -60,6 +127,13 @@ def test_close():
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=False)
 
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
     # Force the port open
     kissdev._state = KISSDeviceState.OPEN
 
@@ -68,6 +142,46 @@ def test_close():
     # Now try closing the port
     kissdev.close()
     assert kissdev.close_calls == 1
+
+    assert failures == []
+
+
+def test_close_fail():
+    """
+    Test a close call that fails triggers the failed signal
+    """
+    loop = DummyLoop()
+    kissdev = FailingKISSDevice(loop=loop, reset_on_close=False)
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
+    # Force the port open
+    kissdev._state = KISSDeviceState.OPEN
+
+    assert kissdev.close_calls == 0
+
+    # Now try closing the port
+    try:
+        kissdev.close()
+        close_ex = None
+    except DummyKISSDeviceError as e:
+        assert str(e) == "Close fails"
+        close_ex = e
+
+    assert kissdev.close_calls == 1
+    assert kissdev.state == KISSDeviceState.FAILED
+    assert len(failures) == 1
+    failure = failures.pop(0)
+
+    assert failure.pop("action") == "close"
+    (ex_c, ex_v, _) = failure.pop("exc_info")
+    assert ex_c is DummyKISSDeviceError
+    assert ex_v is close_ex
 
 
 def test_close_reset():
@@ -94,6 +208,22 @@ def test_close_reset():
     assert func == kissdev._send_data
 
 
+def test_reset():
+    """
+    Test a reset call resets a failed device
+    """
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop, reset_on_close=False)
+
+    # Force the port failed
+    kissdev._state = KISSDeviceState.FAILED
+
+    # Reset the device
+    kissdev.reset()
+
+    assert kissdev._state == KISSDeviceState.CLOSED
+
+
 def test_receive():
     """
     Test that a call to _receive stashes the data then schedules _receive_frame.
@@ -108,6 +238,27 @@ def test_receive():
     # A call to _receive_frame should be pending
     (_, func) = loop.calls.pop()
     assert func == kissdev._receive_frame
+
+
+def test_receive_opening():
+    """
+    Test that a call to _receive whilst in "OPENING" state stashes the data then schedules _check_open.
+    """
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
+
+    # Inject the state
+    kissdev._state = KISSDeviceState.OPENING
+
+    # Pass the data in
+    kissdev._receive(b"test incoming data")
+
+    # Data should be waiting
+    assert bytes(kissdev._rx_buffer) == b"test incoming data"
+
+    # A call to _check_open should be pending
+    (_, func) = loop.calls.pop()
+    assert func == kissdev._check_open
 
 
 def test_receive_frame_garbage():
@@ -280,6 +431,142 @@ def test_dispatch_rx_valid_port():
     assert port.frames[0] is frame
 
 
+def test_send_emptybuf():
+    """
+    Test that _send adds a FEND then our packet followed by a FEND before
+    scheduling a _send_data when TX buffer is empty.
+    """
+
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop)
+
+    # Buffer should be empty
+    assert bytes(kissdev._tx_buffer) == b""
+
+    # Make a dummy frame object to enqueue
+    class MyFrame(object):
+        def __init__(self, data):
+            self._data = data
+
+        def __bytes__(self):
+            return self._data.encode()
+
+    # Enqueue a frame
+    kissdev._send(MyFrame("testing 1 2 3 4"))
+
+    # The frame should now be in the TX buffer
+    assert bytes(kissdev._tx_buffer) == b"\xc0testing 1 2 3 4\xc0"
+
+    # We should have a call to _send_data scheduled.
+    (_, func) = loop.calls.pop(0)
+    assert func == kissdev._send_data
+
+
+def test_send_txdata_no_fend():
+    """
+    Test that _send adds a FEND then our packet followed by a FEND before
+    scheduling a _send_data when existing TX buffer does not end in FEND.
+    """
+
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop)
+
+    # Enqueue some dummy data *not* ending in FEND
+    assert bytes(kissdev._tx_buffer) == b""
+    kissdev._tx_buffer += b"\xc0testing 1 2 3 4"
+
+    # Make a dummy frame object to enqueue
+    class MyFrame(object):
+        def __init__(self, data):
+            self._data = data
+
+        def __bytes__(self):
+            return self._data.encode()
+
+    # Enqueue a frame
+    kissdev._send(MyFrame("testing 5 6 7 8"))
+
+    # The frame should now be in the TX buffer, along with the other.
+    # There should be a FEND in between.
+    assert (
+        bytes(kissdev._tx_buffer)
+        == b"\xc0testing 1 2 3 4\xc0testing 5 6 7 8\xc0"
+    )
+
+    # We should have a call to _send_data scheduled.
+    (_, func) = loop.calls.pop(0)
+    assert func == kissdev._send_data
+
+
+def test_send_txdata_with_fend():
+    """
+    Test that _send adds our packet followed by a FEND before
+    scheduling a _send_data when TX buffer ends in FEND.
+    """
+
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop)
+
+    # Enqueue some dummy data *not* ending in FEND
+    assert bytes(kissdev._tx_buffer) == b""
+    kissdev._tx_buffer += b"\xc0testing 1 2 3 4\xc0"
+
+    # Make a dummy frame object to enqueue
+    class MyFrame(object):
+        def __init__(self, data):
+            self._data = data
+
+        def __bytes__(self):
+            return self._data.encode()
+
+    # Enqueue a frame
+    kissdev._send(MyFrame("testing 5 6 7 8"))
+
+    # The frame should now be in the TX buffer, along with the other.
+    # There should be a FEND in between.
+    assert (
+        bytes(kissdev._tx_buffer)
+        == b"\xc0testing 1 2 3 4\xc0testing 5 6 7 8\xc0"
+    )
+
+    # We should have a call to _send_data scheduled.
+    (_, func) = loop.calls.pop(0)
+    assert func == kissdev._send_data
+
+
+def test_send_txdata_with_fend():
+    """
+    Test that _send adds our packet followed by a FEND before
+    scheduling a _send_data when TX buffer only contains FEND.
+    """
+
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop)
+
+    # Enqueue a FEND
+    assert bytes(kissdev._tx_buffer) == b""
+    kissdev._tx_buffer += b"\xc0"
+
+    # Make a dummy frame object to enqueue
+    class MyFrame(object):
+        def __init__(self, data):
+            self._data = data
+
+        def __bytes__(self):
+            return self._data.encode()
+
+    # Enqueue a frame
+    kissdev._send(MyFrame("testing 5 6 7 8"))
+
+    # The frame should now be in the TX buffer, along with the other.
+    # There should be a FEND in between.
+    assert bytes(kissdev._tx_buffer) == b"\xc0testing 5 6 7 8\xc0"
+
+    # We should have a call to _send_data scheduled.
+    (_, func) = loop.calls.pop(0)
+    assert func == kissdev._send_data
+
+
 def test_send_data():
     """
     Test that _send_data sends whatever data is buffered up to the block size.
@@ -287,6 +574,13 @@ def test_send_data():
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
     kissdev._tx_buffer += b"test output data"
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
 
     # Send the data out.
     kissdev._send_data()
@@ -296,6 +590,49 @@ def test_send_data():
 
     # That should be the lot
     assert len(loop.calls) == 0
+
+    # There should be no failures
+    assert failures == []
+
+
+def test_send_data_fail():
+    """
+    Test that _send_data puts device in failed state if send fails.
+    """
+    loop = DummyLoop()
+    kissdev = FailingKISSDevice(loop=loop)
+    kissdev._tx_buffer += b"test output data"
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
+    # Send the data out.
+    try:
+        kissdev._send_data()
+        send_ex = None
+    except DummyKISSDeviceError as e:
+        assert str(e) == "Send fails"
+        send_ex = e
+
+    # We should now see this was "sent" and now in 'transmitted'
+    assert bytes(kissdev.transmitted) == b"test output data"
+
+    # That should be the lot
+    assert len(loop.calls) == 0
+
+    # We should be in the failed state
+    assert kissdev.state == KISSDeviceState.FAILED
+    assert len(failures) == 1
+    failure = failures.pop(0)
+
+    assert failure.pop("action") == "send"
+    (ex_c, ex_v, _) = failure.pop("exc_info")
+    assert ex_c is DummyKISSDeviceError
+    assert ex_v is send_ex
 
 
 def test_send_data_block_size_exceed_reschedule():
@@ -416,10 +753,25 @@ def test_getitem():
     assert kissdev._port[7] is port
 
 
-def test__send_kiss_cmd():
+def test_send_kiss_cmd():
     kissdev = DummyKISSDevice(loop=DummyLoop())
     kissdev._kiss_rem_commands = []
 
     kissdev._send_kiss_cmd()
     assert KISSDeviceState.OPEN == kissdev._state
     assert bytearray() == kissdev._rx_buffer
+
+
+def test_check_open():
+    """
+    Test that a call to _check_open hands-off to _send_kiss_cmd.
+    """
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
+
+    # Call the function under test
+    kissdev._check_open()
+
+    # A call to _send_kiss_cmd should be pending
+    (_, func) = loop.calls.pop()
+    assert func == kissdev._send_kiss_cmd
