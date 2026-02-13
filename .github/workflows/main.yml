@@ -25,10 +25,14 @@ jobs:
       || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     strategy:
       matrix:
+        # See https://raw.githubusercontent.com/actions/python-versions/refs/heads/main/versions-manifest.json for versions
         python:
-        - "3.5"
-        - "3.11"
-        - "3.12"
+        - "3.9"   # Oldest tested; consistent with Debian 11
+        - "3.10"  # consistent with Ubuntu 22.04
+        - "3.11"  # consistent with Debian 12
+        - "3.12"  # consistent with Ubuntu 24.04
+        - "3.13"  # consistent with Debian 13
+        - "3.14"  # Current latest release of Python
         platform:
         # This package is supposed to be OS-independent and is unlikely to have
         # OS-specific bugs, so we conserve runner usage by only testing on Linux
@@ -36,14 +40,6 @@ jobs:
         # probably work on Mac and Windows too. But if an OS-specific bug does
         # slip through, we should catch it in pre-release testing.
         - ubuntu-latest
-        exclude:
-        # Python 3.5 does not run on ubuntu-latest
-        - python: "3.5"
-          platform: ubuntu-latest
-        include:
-        - python: "3.5"
-          platform: ubuntu-20.04
-          skip-coverage: true
     with:
       python-version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
