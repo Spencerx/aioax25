@@ -7,6 +7,41 @@ The aim of this project is to implement a simple-to-understand asynchronous
 AX.25 library built on `asyncio` and `pyserial`, implementing a AX.25 and APRS
 stack in pure Python.
 
+## Platform / Python version support
+
+### Platform support
+
+| Tier 1 | Tier 2 | Tier 3 |
+|--------|--------|--------|
+| Debian Linux (ARM64, ARMHF, AMD64) | Other Linux (AMD64, ARM64, ARMHF, mips64el) | Microsoft Windows |
+| Ubuntu Linux (AMD64) | \*BSD | Apple MacOS X |
+| Gentoo Linux (AMD64) | OpenIndiana | |
+| | Haiku OS | |
+
+The Github workers used for CI use Ubuntu-based images.
+
+* Tier 1: regularly tested and used on this platform.
+* Tier 2: accessible to the authors for intermittent testing, but not regularly
+  in use.
+* Tier 3: not accessible to the authors, limited support at best.
+
+### Python support
+
+We're testing against the mainline Python releases used in supported Debian and
+Ubuntu OSes.  As of 2026-02-14:
+
+* Python 3.9, as shipped in Debian 11 (Bullseye)
+* Python 3.10, as shipped in Ubuntu 22.04 (Jammy)
+* Python 3.11, as shipped in Debian 12 (Bookworm)
+* Python 3.12, as shipped in Ubuntu 24.04 (Noble)
+* Python 3.13, as shipped in Debian 13 (Trixie)
+* Python 3.14, the current stable release of Python
+
+I'm willing to consider Pypy if there's demand for it.  The codebase is
+written against Python 3.5, and effort is being made to maintain that,
+but due to CI constraints, we're no longer regularly testing on releases
+prior to the above list.
+
 ## What works
 
 * We can put a Kantronics KPC-3 TNC into KISS mode automatically
