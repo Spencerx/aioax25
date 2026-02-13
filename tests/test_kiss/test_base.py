@@ -488,7 +488,10 @@ def test_send_txdata_no_fend():
 
     # The frame should now be in the TX buffer, along with the other.
     # There should be a FEND in between.
-    assert bytes(kissdev._tx_buffer) == b"\xc0testing 1 2 3 4\xc0testing 5 6 7 8\xc0"
+    assert (
+        bytes(kissdev._tx_buffer)
+        == b"\xc0testing 1 2 3 4\xc0testing 5 6 7 8\xc0"
+    )
 
     # We should have a call to _send_data scheduled.
     (_, func) = loop.calls.pop(0)
@@ -521,7 +524,10 @@ def test_send_txdata_with_fend():
 
     # The frame should now be in the TX buffer, along with the other.
     # There should be a FEND in between.
-    assert bytes(kissdev._tx_buffer) == b"\xc0testing 1 2 3 4\xc0testing 5 6 7 8\xc0"
+    assert (
+        bytes(kissdev._tx_buffer)
+        == b"\xc0testing 1 2 3 4\xc0testing 5 6 7 8\xc0"
+    )
 
     # We should have a call to _send_data scheduled.
     (_, func) = loop.calls.pop(0)
