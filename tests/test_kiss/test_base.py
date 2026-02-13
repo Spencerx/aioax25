@@ -747,10 +747,25 @@ def test_getitem():
     assert kissdev._port[7] is port
 
 
-def test__send_kiss_cmd():
+def test_send_kiss_cmd():
     kissdev = DummyKISSDevice(loop=DummyLoop())
     kissdev._kiss_rem_commands = []
 
     kissdev._send_kiss_cmd()
     assert KISSDeviceState.OPEN == kissdev._state
     assert bytearray() == kissdev._rx_buffer
+
+
+def test_check_open():
+    """
+    Test that a call to _check_open hands-off to _send_kiss_cmd.
+    """
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
+
+    # Call the function under test
+    kissdev._check_open()
+
+    # A call to _send_kiss_cmd should be pending
+    (_, func) = loop.calls.pop()
+    assert func == kissdev._send_kiss_cmd
