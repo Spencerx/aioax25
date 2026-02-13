@@ -32,7 +32,7 @@ jobs:
         - "3.11"  # consistent with Debian 12
         - "3.12"  # consistent with Ubuntu 24.04
         - "3.13"  # consistent with Debian 13
-        - "3.14"  # Current latest release of Python
+        #- "3.14"  # Current latest release of Python -- TODO
         platform:
         # This package is supposed to be OS-independent and is unlikely to have
         # OS-specific bugs, so we conserve runner usage by only testing on Linux

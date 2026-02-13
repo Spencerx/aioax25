@@ -35,7 +35,7 @@ Ubuntu OSes.  As of 2026-02-14:
 * Python 3.11, as shipped in Debian 12 (Bookworm)
 * Python 3.12, as shipped in Ubuntu 24.04 (Noble)
 * Python 3.13, as shipped in Debian 13 (Trixie)
-* Python 3.14, the current stable release of Python
+* Python 3.14, the current stable release of Python ([currently broken](https://github.com/sjlongland/aioax25/issues/22) -- will fix)
 
 I'm willing to consider Pypy if there's demand for it.  The codebase is
 written against Python 3.5, and effort is being made to maintain that,
