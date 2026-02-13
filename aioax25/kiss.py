@@ -327,6 +327,7 @@ class BaseKISSDevice(object):
             end = self._rx_buffer.index(BYTE_FEND, 1)
         except ValueError:
             # Uhh huh, so frame is incomplete.
+            self._log.debug("Incomplete frame, wait for the rest to arrive.")
             return
 
         self._log.debug("RECV FRAME end at %d", end)
@@ -349,16 +350,14 @@ class BaseKISSDevice(object):
                 self._dispatch_rx_frame, KISSCommand.decode(frame)
             )
 
-        # If we just have a FEND, stop here.
-        if bytes(self._rx_buffer) == bytearray([BYTE_FEND]):
-            self._log.debug("FEND byte in receive buffer, wait for more.")
-            return
-
-        # If there is more to send, call ourselves via the IO loop
-        if len(self._rx_buffer):
+        # There must be at least two bytes: a FEND-FEND sequence is
+        # the minimum we can expect.  If there is at least two bytes,
+        # we re-schedule ourselves to collect the rest.
+        if len(self._rx_buffer) > 1:
             self._log.debug("More data in receive buffer, will check again.")
             self._loop.call_soon(self._receive_frame)
         else:
+            # At most there is probably a single FEND byte, we are done.
             self._log.debug("No data in receive buffer.  Wait for more.")
 
     def _dispatch_rx_frame(self, frame):
