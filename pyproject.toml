@@ -10,7 +10,6 @@ classifiers = [
     "Environment :: No Input/Output (Daemon)",
     "Framework :: AsyncIO",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
     "Operating System :: POSIX",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Communications :: Ham Radio"
@@ -21,6 +20,7 @@ dependencies = [
     "pyserial-asyncio",
     "signalslot"
 ]
+license = "GPL-2.0+"
 
 [project.optional-dependencies]
 call = [
@@ -31,12 +31,9 @@ call = [
 file = "README.md"
 content-type = "text/markdown"
 
-[project.license]
-text = "GPL-2.0-or-later"
-
 [[project.authors]]
 name = "Stuart Longland VK4MSL"
-email = "me@vk4msl.id.au"
+email = "me@vk4msl.com"
 
 [tool.black]
 line-length = 78
