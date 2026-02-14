@@ -95,6 +95,37 @@ async def test_received_msg_signal():
     await receive_future
 
 
+@pytest.mark.asyncio
+async def test_received_msg_signal_frame():
+    """
+    Test received messages (as a frame) trigger the received_msg signal.
+    """
+    LOOPMANAGER.loop = None
+    my_port = DummyKISS()
+    my_frame = AX25UnnumberedInformationFrame(
+        destination="VK4BWI", source="VK4MSL", pid=0xF0, payload=b"testing"
+    )
+    receive_future = Future()
+
+    my_interface = AX25Interface(my_port)
+
+    def _on_receive_match(interface, frame, **kwargs):
+        try:
+            assert len(kwargs) == 0, "Too many arguments"
+            assert (interface) is (my_interface), "Wrong interface"
+            assert bytes(frame) == bytes(my_frame), "Wrong frame"
+            receive_future.set_result(None)
+        except Exception as e:
+            receive_future.set_exception(e)
+
+    my_interface.received_msg.connect(_on_receive_match)
+
+    # Pass in a message (as a frame)
+    my_port.received.emit(frame=my_frame)
+
+    await receive_future
+
+
 def test_receive_bind():
     """
     Test bind rejects non-strings as call-signs.
@@ -389,6 +420,30 @@ def test_unbind_re():
     assert len(my_interface._receiver_re) == 0
 
 
+def test_unbind_multiple_listeners():
+    """
+    Test unbinding one listener does not unbind the others.
+    """
+    LOOPMANAGER.loop = None
+    my_port = DummyKISS()
+    my_interface = AX25Interface(my_port, loop=DummyLoop())
+
+    my_receiver1 = lambda **k: None
+    my_receiver2 = lambda **k: None
+
+    # Inject two receivers
+    my_interface._receiver_str = {
+        "MYCALL": {12: [my_receiver1, my_receiver2]}
+    }
+    my_interface.unbind(my_receiver1, "MYCALL", ssid=12)
+
+    # This should still have the second receiver there
+    assert list(my_interface._receiver_str.keys()) == ["MYCALL"]
+    assert list(my_interface._receiver_str["MYCALL"].keys()) == [12]
+    assert len(my_interface._receiver_str["MYCALL"][12]) == 1
+    assert my_interface._receiver_str["MYCALL"][12][0] is my_receiver2
+
+
 def test_reception_resets_cts():
     """
     Check the clear-to-send expiry is updated with received traffic.
@@ -587,8 +642,9 @@ async def test_transmit_refuse_callback_and_future():
 
     # Send the message
     try:
-        my_interface.transmit(my_frame, callback=lambda **kwa : None,
-                              future=future)
+        my_interface.transmit(
+            my_frame, callback=lambda **kwa: None, future=future
+        )
         assert False, "Should not have accepted both arguments!"
     except ValueError as ex:
         assert str(ex) == "Pass callback= or future=, not both!"
