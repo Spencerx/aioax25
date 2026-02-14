@@ -462,14 +462,21 @@ class BaseKISSDevice(EventLoopConsumer):
                 self._mark_open()
             return
 
-        self._log.debug("Sending %r", command)
-        command = command.encode("US-ASCII")
-        self._rx_buffer = bytearray()
-        for bv in command:
-            self._send_raw_data(bytes([bv]))
-            time.sleep(0.1)
-        self._send_raw_data(b"\r")
-        self._loop.call_later(0.5, self._check_open)
+        try:
+            self._log.debug("Sending %r", command)
+            command = command.encode("US-ASCII")
+            self._rx_buffer = bytearray()
+            for bv in command:
+                self._send_raw_data(bytes([bv]))
+                time.sleep(0.1)
+            self._send_raw_data(b"\r")
+            self._loop.call_later(0.5, self._check_open)
+        except:
+            self._log.error("Failed to initialise KISS mode", exc_info=1)
+            (ex_type, ex_value, ex_traceback) = exc_info()
+            self._mark_open(ex_value)
+            self._on_fail("open", (ex_type, ex_value, ex_traceback))
+            raise
 
     def _mark_open(self, ex=None):
         """
