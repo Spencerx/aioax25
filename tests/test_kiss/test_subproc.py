@@ -10,11 +10,12 @@ Subprocess KISS interface unit tests.
 
 from aioax25 import kiss
 import logging
-from ..asynctest import asynctest
 from asyncio import get_event_loop
 
+import pytest
 
-@asynctest
+
+@pytest.mark.asyncio
 async def test_open_connection():
     """
     Test we can open a subprocess without using a shell.
@@ -52,7 +53,7 @@ async def test_open_connection():
         loop.subprocess_exec = orig_subprocess_exec
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_open_connection_shell():
     """
     Test we can open a subprocess using a shell.
@@ -91,7 +92,7 @@ async def test_open_connection_shell():
         loop.subprocess_shell = orig_subprocess_shell
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_open_connection_failure():
     """
     Test subprocess failure is detected and handled.

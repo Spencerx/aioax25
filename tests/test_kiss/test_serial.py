@@ -8,8 +8,9 @@ from collections import namedtuple
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
 from aioax25 import kiss
 import logging
-from ..asynctest import asynctest
 from asyncio import get_event_loop, sleep
+
+import pytest
 
 
 class DummySerial(object):
@@ -155,7 +156,7 @@ class TestDevice(kiss.SerialKISSDevice):
         self.init_called = True
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_open():
     """
     Test we can open the port.
@@ -178,7 +179,7 @@ async def test_open():
     assert kissdev.init_called
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_open_fail():
     """
     Test open failures are handled.
@@ -213,7 +214,7 @@ async def test_open_fail():
     assert str(ex_v) == "Open device failed"
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_close():
     """
     Test we can close the port.
@@ -257,75 +258,69 @@ async def test_close():
     assert kissdev._state == kiss.KISSDeviceState.CLOSED
 
 
+@pytest.mark.asyncio
 def test_on_close_err(logger):
     """
     Test errors are logged if given
     """
+    loop = get_event_loop()
+    kissdev = TestDevice(
+        device="/dev/ttyS0",
+        baudrate=9600,
+        log=logger,
+        loop=loop,
+        reset_on_close=False,
+    )
 
-    # Yeah, kludgy… but py.test won't see the fixture if I don't
-    # do it this way.
-    @asynctest
-    async def _run():
-        loop = get_event_loop()
-        kissdev = TestDevice(
-            device="/dev/ttyS0",
-            baudrate=9600,
-            log=logger,
-            loop=loop,
-            reset_on_close=False,
+    # Force the port open
+    kissdev._state = kiss.KISSDeviceState.OPEN
+    serial = DummySerial(
+        port="/dev/ttyS0",
+        baudrate=9600,
+        bytesize=EIGHTBITS,
+        parity=PARITY_NONE,
+        stopbits=STOPBITS_ONE,
+        timeout=None,
+        xonxoff=False,
+        rtscts=False,
+        write_timeout=None,
+        dsrdtr=False,
+        inter_byte_timeout=None,
+    )
+    kissdev._transport = serial
+
+    # Define a close error
+    class CommsError(IOError):
+        pass
+
+    my_err = CommsError()
+
+    # Now report the closure of the port
+    kissdev._on_close(my_err)
+
+    # We should have seen a log message reported
+    assert logger.logrecords == [
+        dict(
+            method="error",
+            args=(
+                "Closing port due to error %r",
+                my_err,
+            ),
+            kwargs={},
+            ex_type=None,
+            ex_val=None,
+            ex_tb=None,
         )
+    ]
 
-        # Force the port open
-        kissdev._state = kiss.KISSDeviceState.OPEN
-        serial = DummySerial(
-            port="/dev/ttyS0",
-            baudrate=9600,
-            bytesize=EIGHTBITS,
-            parity=PARITY_NONE,
-            stopbits=STOPBITS_ONE,
-            timeout=None,
-            xonxoff=False,
-            rtscts=False,
-            write_timeout=None,
-            dsrdtr=False,
-            inter_byte_timeout=None,
-        )
-        kissdev._transport = serial
+    # The device should not reference the port
+    assert kissdev._transport == None
 
-        # Define a close error
-        class CommsError(IOError):
-            pass
-
-        my_err = CommsError()
-
-        # Now report the closure of the port
-        kissdev._on_close(my_err)
-
-        # We should have seen a log message reported
-        assert logger.logrecords == [
-            dict(
-                method="error",
-                args=(
-                    "Closing port due to error %r",
-                    my_err,
-                ),
-                kwargs={},
-                ex_type=None,
-                ex_val=None,
-                ex_tb=None,
-            )
-        ]
-
-        # The device should not reference the port
-        assert kissdev._transport == None
-
-        # The port should now be in the closed state
-        assert kissdev._state == kiss.KISSDeviceState.CLOSED
-
-    _run()
+    # The port should now be in the closed state
+    assert kissdev._state == kiss.KISSDeviceState.CLOSED
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_send_raw_data():
     """
     Test _send_raw_data passes the data to the serial device.

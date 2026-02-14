@@ -4,8 +4,9 @@ from aioax25.signal import Signal
 from aioax25.interface import AX25Interface
 from aioax25.frame import AX25UnnumberedInformationFrame
 
-from ..asynctest import asynctest
 from asyncio import Future, get_event_loop, sleep
+
+import pytest
 
 import time
 import re
@@ -36,7 +37,7 @@ class UnreliableDummyKISS(DummyKISS):
         super(UnreliableDummyKISS, self).send(frame)
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_received_msg_signal():
     """
     Test received messages trigger the received_msg signal.
@@ -86,7 +87,7 @@ def test_receive_bind():
         )
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_receive_str_filter():
     """
     Test matching messages can trigger string filters (without SSID).
@@ -131,7 +132,7 @@ async def test_receive_str_filter():
     assert len(unmatched_filter_received) == 0
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_receive_str_filter_ssid():
     """
     Test matching messages can trigger string filters (with SSID).
@@ -176,7 +177,7 @@ async def test_receive_str_filter_ssid():
     assert len(unmatched_filter_received) == 0
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_receive_re_filter():
     """
     Test matching messages can trigger regex filters (without SSID).
@@ -225,7 +226,7 @@ async def test_receive_re_filter():
     assert len(unmatched_filter_received) == 0
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_receive_re_filter_ssid():
     """
     Test matching messages can trigger regex filters (with SSID).
@@ -370,7 +371,7 @@ def test_reception_resets_cts():
     assert (cts_after) > (time.monotonic())
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_transmit_waits_cts():
     """
     Test sending a message waits for the channel to be clear.
@@ -414,7 +415,7 @@ async def test_transmit_waits_cts():
     assert ((send_time - time_before)) >= (0.25)
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_transmit_cancel():
     """
     Test that pending messages can be cancelled.
@@ -439,7 +440,7 @@ async def test_transmit_cancel():
     assert len(my_port.sent) == 0
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_transmit_sends_immediate_if_cts():
     """
     Test the interface sends immediately if last activity a long time ago.
@@ -486,7 +487,7 @@ async def test_transmit_sends_immediate_if_cts():
     assert ((send_time - time_before)) < (0.01)
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_transmit_sends_if_not_expired():
     """
     Test the interface sends frame if not expired.
@@ -534,7 +535,7 @@ async def test_transmit_sends_if_not_expired():
     assert ((send_time - time_before)) < (0.05)
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_transmit_drops_expired():
     """
     Test the interface drops expired messages.
@@ -567,7 +568,7 @@ async def test_transmit_drops_expired():
     assert len(my_port.sent) == 0
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_transmit_waits_if_cts_reset():
     """
     Test the interface waits if CTS timer is reset.
@@ -615,7 +616,7 @@ async def test_transmit_waits_if_cts_reset():
     assert (send_time - time_before) < (1.05)
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_transmit_handles_failure():
     """
     Test transmit failures don't kill the interface handling.

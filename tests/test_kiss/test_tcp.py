@@ -10,11 +10,12 @@ TCP KISS interface unit tests.
 
 from aioax25 import kiss
 import logging
-from ..asynctest import asynctest
 from asyncio import get_event_loop
 
+import pytest
 
-@asynctest
+
+@pytest.mark.asyncio
 async def test_open_connection():
     # This will receive the arguments passed to create_connection
     connection_args = {}
@@ -60,7 +61,7 @@ async def test_open_connection():
         loop.create_connection = orig_create_connection
 
 
-@asynctest
+@pytest.mark.asyncio
 async def test_open_connection_fail():
     # This will receive the arguments passed to create_connection
     connection_args = {}
