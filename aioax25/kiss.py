@@ -547,6 +547,7 @@ class BaseKISSDevice(EventLoopConsumer):
             if future:
                 future.set_exception(ex_value)
             self._on_fail("send", exc_info())
+            raise
 
         # If we are closing, wait for this to be sent
         if (self._state == KISSDeviceState.CLOSING) and (
