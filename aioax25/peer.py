@@ -739,20 +739,20 @@ class AX25Peer(object):
         """
         self._log.debug("%d through to %d are received", self._ack_state, nr)
         while self._ack_state != nr:
-            if self._log.isEnabledFor(logging.DEBUG):
+            if self._log.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 self._log.debug("Pending frames: %r", self._pending_iframes)
 
             self._log.debug("ACKing N(R)=%s", self._ack_state)
             try:
                 frame = self._pending_iframes.pop(self._ack_state)
-                if self._log.isEnabledFor(logging.DEBUG):
+                if self._log.isEnabledFor(logging.DEBUG):  # pragma: no cover
                     self._log.debug(
                         "Popped %s off pending queue, N(R)s pending: %r",
                         frame,
                         self._pending_iframes,
                     )
             except KeyError:
-                if self._log.isEnabledFor(logging.DEBUG):
+                if self._log.isEnabledFor(logging.DEBUG):  # pragma: no cover
                     self._log.debug(
                         "ACK to unexpected N(R) number %s, pending: %r",
                         self._ack_state,
@@ -1522,7 +1522,7 @@ class AX25Peer(object):
             "_send_state", delta=1, comment="send next I-frame"
         )
 
-        if self._log.isEnabledFor(logging.DEBUG):
+        if self._log.isEnabledFor(logging.DEBUG):  # pragma: no cover
             self._log.debug("Pending frames: %r", self._pending_iframes)
 
     def _transmit_iframe(self, ns):
