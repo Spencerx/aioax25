@@ -1051,3 +1051,61 @@ async def test_transmit_handles_async_failure_f():
     assert bytes(sent_frame) == bytes(my_frame_2)
     assert ((time.monotonic() - send_time)) < (0.05)
     assert ((send_time - time_before)) >= (0.25)
+
+
+@pytest.mark.asyncio
+async def test_transmit_handles_async_failure_f_cancel():
+    """
+    Test cancelling a future doesn't cause issues for error handling.
+    """
+    LOOPMANAGER.loop = None
+    my_port = UnreliableDummyKISS()
+    my_frame_1 = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4",
+        source="VK4MSL",
+        pid=0xF0,
+        payload=b"async fail: testing 1",
+    )
+    my_frame_2 = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4",
+        source="VK4MSL",
+        pid=0xF0,
+        payload=b"testing 2",
+    )
+    transmit_future = Future()
+
+    my_interface = AX25Interface(my_port, cts_delay=0.250, return_future=True)
+
+    # Override clear to send expiry
+    my_interface._cts_expiry = 0
+
+    # The time before transmission
+    time_before = time.monotonic()
+
+    # Queue the first frame, then immediately cancel it.
+    f = my_interface.transmit(my_frame_1)
+    f.cancel()
+
+    # Queue the second after a delay, we expect this one to work
+    async def _tx2():
+        await sleep(0.01)
+        await my_interface.transmit(my_frame_2)
+
+    tx2_future = _tx2()
+
+    # Set a timeout
+    def _on_timeout():
+        if not tx2_future.done():
+            tx2_future.set_exception(AssertionError("Timed out"))
+
+    get_event_loop().call_later(2.0, _on_timeout)
+
+    # Let the magic happen
+    await tx2_future
+
+    assert len(my_port.sent) == 1
+    (send_time, sent_frame) = my_port.sent.pop(0)
+
+    assert bytes(sent_frame) == bytes(my_frame_2)
+    assert ((time.monotonic() - send_time)) < (0.05)
+    assert ((send_time - time_before)) >= (0.25)
