@@ -6,12 +6,13 @@ from aioax25.frame import AX25UnnumberedInformationFrame
 from aioax25._loop import LOOPMANAGER
 
 from ..loop import DummyLoop
-from asyncio import Future, get_event_loop, sleep
+from asyncio import Future, gather, get_event_loop, sleep
 
 import pytest
 
 import time
 import re
+import logging
 
 
 class DummyKISS(object):
@@ -22,21 +23,33 @@ class DummyKISS(object):
     def __init__(self):
         self.received = Signal()
         self.sent = []
+        self._log = logging.getLogger("DummyKISS")
 
-    def send(self, frame):
+    def send(self, frame, future):
         self.sent.append((time.monotonic(), frame))
+        future.set_result(None)
+
+
+class DummyKISSError(IOError):
+    pass
 
 
 class UnreliableDummyKISS(DummyKISS):
     def __init__(self):
         super(UnreliableDummyKISS, self).__init__()
-        self.send_calls = 0
 
-    def send(self, frame):
-        self.send_calls += 1
-        if self.send_calls == 1:
-            raise IOError("Whoopsie")
-        super(UnreliableDummyKISS, self).send(frame)
+    def send(self, frame, future):
+        payload = bytes(frame.payload)
+        self._log.debug("Received payload: %r", payload)
+        if payload.startswith(b"sync fail: "):
+            self._log.debug("Synchronously failing: %s", frame)
+            raise DummyKISSError(payload.decode())
+        elif payload.startswith(b"async fail: "):
+            self._log.debug("Asynchronously failing: %s", frame)
+            future.set_exception(DummyKISSError(payload.decode()))
+            return
+
+        super(UnreliableDummyKISS, self).send(frame, future)
 
 
 @pytest.mark.asyncio
@@ -457,6 +470,122 @@ async def test_transmit_cancel():
 
 
 @pytest.mark.asyncio
+async def test_transmit_cancel_notfound():
+    """
+    Test that cancelling a message not in the queue is a no-op
+    """
+    LOOPMANAGER.loop = None
+    my_port = DummyKISS()
+    # These are clones, not the same frame instance!
+    my_frame = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
+    )
+    another_frame = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
+    )
+
+    my_interface = AX25Interface(my_port)
+
+    # Send the message
+    my_interface.transmit(my_frame)
+
+    # Cancel it!
+    my_interface.cancel_transmit(another_frame)
+
+    # Wait a second
+    await sleep(1)
+
+    # Only the first frame should have been sent
+    assert len(my_port.sent) > 0
+    (_, frame) = my_port.sent.pop(0)
+    assert frame is my_frame
+
+
+@pytest.mark.asyncio
+async def test_transmit_cancel_notify():
+    """
+    Test that cancelling a message generates a notification
+    """
+    LOOPMANAGER.loop = None
+    my_port = DummyKISS()
+    my_frame = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
+    )
+
+    my_interface = AX25Interface(my_port, return_future=True)
+
+    # Send the message
+    future = my_interface.transmit(my_frame)
+
+    # Cancel it!
+    my_interface.cancel_transmit(my_frame)
+
+    try:
+        await future
+        assert False, "Should not have been sent!"
+    except IOError as ex:
+        assert str(ex) == "Cancelled"
+
+    # Nothing should be sent
+    assert len(my_port.sent) == 0
+
+
+@pytest.mark.asyncio
+async def test_transmit_expire_notify():
+    """
+    Test that a caller is notified of expired messages.
+    """
+    LOOPMANAGER.loop = None
+    my_port = DummyKISS()
+    my_frame = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
+    )
+
+    # This timestamp was a _long_ time ago!  1AM 1st January 1970
+    my_frame.deadline = 3600
+
+    my_interface = AX25Interface(my_port, return_future=True)
+
+    # Send the message
+    future = my_interface.transmit(my_frame)
+
+    try:
+        await future
+        assert False, "Should not have been sent!"
+    except IOError as ex:
+        assert str(ex) == "Frame expired"
+
+    # Nothing should be sent
+    assert len(my_port.sent) == 0
+
+
+@pytest.mark.asyncio
+async def test_transmit_refuse_callback_and_future():
+    """
+    Test that transmit refuses if given both a callback and a future.
+    """
+    LOOPMANAGER.loop = None
+    my_port = DummyKISS()
+    my_frame = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
+    )
+
+    my_interface = AX25Interface(my_port)
+    future = get_event_loop().create_future()
+
+    # Send the message
+    try:
+        my_interface.transmit(my_frame, callback=lambda **kwa : None,
+                              future=future)
+        assert False, "Should not have accepted both arguments!"
+    except ValueError as ex:
+        assert str(ex) == "Pass callback= or future=, not both!"
+
+    # Nothing should be sent
+    assert len(my_port.sent) == 0
+
+
+@pytest.mark.asyncio
 async def test_transmit_sends_immediate_if_cts():
     """
     Test the interface sends immediately if last activity a long time ago.
@@ -637,9 +766,9 @@ async def test_transmit_waits_if_cts_reset():
 
 
 @pytest.mark.asyncio
-async def test_transmit_handles_failure():
+async def test_transmit_handles_sync_failure_cb():
     """
-    Test transmit failures don't kill the interface handling.
+    Test synchronous transmit failures don't kill the interface handling.
     """
     LOOPMANAGER.loop = None
     my_port = UnreliableDummyKISS()
@@ -647,7 +776,7 @@ async def test_transmit_handles_failure():
         destination="VK4BWI-4",
         source="VK4MSL",
         pid=0xF0,
-        payload=b"testing 1",
+        payload=b"sync fail: testing 1",
     )
     my_frame_2 = AX25UnnumberedInformationFrame(
         destination="VK4BWI-4",
@@ -662,12 +791,29 @@ async def test_transmit_handles_failure():
     # Override clear to send expiry
     my_interface._cts_expiry = 0
 
-    def _on_transmit(interface, frame, **kwargs):
+    # Seen frames
+    seen = set()
+
+    def _on_transmit(interface, frame, exception=None, **kwargs):
         try:
-            assert len(kwargs) == 0, "Too many arguments"
+            assert kwargs == {}, "Too many arguments"
             assert (interface) is (my_interface), "Wrong interface"
-            assert bytes(frame) == bytes(my_frame_2), "Wrong frame"
-            transmit_future.set_result(None)
+            if bytes(frame) == bytes(my_frame_1):
+                seen.add(1)
+                assert exception is not None, "No exception passed"
+                assert isinstance(
+                    exception, DummyKISSError
+                ), "Wrong exception class"
+            elif bytes(frame) == bytes(my_frame_2):
+                seen.add(2)
+                assert exception is None, "frame should not have failed"
+            else:
+                assert False, (
+                    "%s does not match either expected frame" % frame
+                )
+
+            if (1 in seen) and (2 in seen):
+                transmit_future.set_result(None)
         except Exception as e:
             transmit_future.set_exception(e)
 
@@ -685,6 +831,219 @@ async def test_transmit_handles_failure():
     my_interface.transmit(my_frame_2, _on_transmit)  # This will work
 
     await transmit_future
+
+    assert len(my_port.sent) == 1
+    (send_time, sent_frame) = my_port.sent.pop(0)
+
+    assert bytes(sent_frame) == bytes(my_frame_2)
+    assert ((time.monotonic() - send_time)) < (0.05)
+    assert ((send_time - time_before)) >= (0.25)
+
+
+@pytest.mark.asyncio
+async def test_transmit_handles_async_failure_cb():
+    """
+    Test asynchronous transmit failures don't kill the interface handling.
+    """
+    LOOPMANAGER.loop = None
+    my_port = UnreliableDummyKISS()
+    my_frame_1 = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4",
+        source="VK4MSL",
+        pid=0xF0,
+        payload=b"async fail: testing 1",
+    )
+    my_frame_2 = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4",
+        source="VK4MSL",
+        pid=0xF0,
+        payload=b"testing 2",
+    )
+    transmit_future = Future()
+
+    my_interface = AX25Interface(my_port, cts_delay=0.250)
+
+    # Override clear to send expiry
+    my_interface._cts_expiry = 0
+
+    # Seen frames
+    seen = set()
+
+    def _on_transmit(interface, frame, exception=None, **kwargs):
+        try:
+            assert kwargs == {}, "Too many arguments"
+            assert (interface) is (my_interface), "Wrong interface"
+            if bytes(frame) == bytes(my_frame_1):
+                seen.add(1)
+                assert exception is not None, "No exception passed"
+                assert isinstance(
+                    exception, DummyKISSError
+                ), "Wrong exception class"
+            elif bytes(frame) == bytes(my_frame_2):
+                seen.add(2)
+                assert exception is None, "frame should not have failed"
+            else:
+                assert False, (
+                    "%s does not match either expected frame" % frame
+                )
+
+            if (1 in seen) and (2 in seen):
+                transmit_future.set_result(None)
+        except Exception as e:
+            transmit_future.set_exception(e)
+
+    def _on_timeout():
+        transmit_future.set_exception(AssertionError("Timed out"))
+
+    # The time before transmission
+    time_before = time.monotonic()
+
+    # Set a timeout
+    get_event_loop().call_later(2.0, _on_timeout)
+
+    # Send the messages
+    my_interface.transmit(my_frame_1, _on_transmit)  # This will fail
+    my_interface.transmit(my_frame_2, _on_transmit)  # This will work
+
+    await transmit_future
+
+    assert len(my_port.sent) == 1
+    (send_time, sent_frame) = my_port.sent.pop(0)
+
+    assert bytes(sent_frame) == bytes(my_frame_2)
+    assert ((time.monotonic() - send_time)) < (0.05)
+    assert ((send_time - time_before)) >= (0.25)
+
+
+@pytest.mark.asyncio
+async def test_transmit_handles_sync_failure_f():
+    """
+    Test synchronous transmit failures don't kill the interface handling.
+    (returning Future)
+    """
+    LOOPMANAGER.loop = None
+    my_port = UnreliableDummyKISS()
+    my_frame_1 = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4",
+        source="VK4MSL",
+        pid=0xF0,
+        payload=b"sync fail: testing 1",
+    )
+    my_frame_2 = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4",
+        source="VK4MSL",
+        pid=0xF0,
+        payload=b"testing 2",
+    )
+    transmit_future = Future()
+
+    my_interface = AX25Interface(my_port, cts_delay=0.250, return_future=True)
+
+    # Override clear to send expiry
+    my_interface._cts_expiry = 0
+
+    # The time before transmission
+    time_before = time.monotonic()
+
+    # Queue the first frame, we except an error here
+    async def _tx1():
+        try:
+            await my_interface.transmit(my_frame_1)
+            assert False, "TX should have failed"
+        except DummyKISSError:
+            pass
+        except:
+            raise
+
+    tx1_future = _tx1()
+
+    # Queue the second after a delay, we expect this one to work
+    async def _tx2():
+        await sleep(0.01)
+        await my_interface.transmit(my_frame_2)
+
+    tx2_future = _tx2()
+
+    # Set a timeout
+    def _on_timeout():
+        if not tx1_future.done():
+            tx1_future.set_exception(AssertionError("Timed out"))
+        if not tx2_future.done():
+            tx2_future.set_exception(AssertionError("Timed out"))
+
+    get_event_loop().call_later(2.0, _on_timeout)
+
+    # Let the magic happen
+    await gather(tx1_future, tx2_future)
+
+    assert len(my_port.sent) == 1
+    (send_time, sent_frame) = my_port.sent.pop(0)
+
+    assert bytes(sent_frame) == bytes(my_frame_2)
+    assert ((time.monotonic() - send_time)) < (0.05)
+    assert ((send_time - time_before)) >= (0.25)
+
+
+@pytest.mark.asyncio
+async def test_transmit_handles_async_failure_f():
+    """
+    Test asynchronous transmit failures don't kill the interface handling.
+    (returning Future)
+    """
+    LOOPMANAGER.loop = None
+    my_port = UnreliableDummyKISS()
+    my_frame_1 = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4",
+        source="VK4MSL",
+        pid=0xF0,
+        payload=b"async fail: testing 1",
+    )
+    my_frame_2 = AX25UnnumberedInformationFrame(
+        destination="VK4BWI-4",
+        source="VK4MSL",
+        pid=0xF0,
+        payload=b"testing 2",
+    )
+    transmit_future = Future()
+
+    my_interface = AX25Interface(my_port, cts_delay=0.250, return_future=True)
+
+    # Override clear to send expiry
+    my_interface._cts_expiry = 0
+
+    # The time before transmission
+    time_before = time.monotonic()
+
+    # Queue the first frame, we except an error here
+    async def _tx1():
+        try:
+            await my_interface.transmit(my_frame_1)
+            assert False, "TX should have failed"
+        except DummyKISSError:
+            pass
+        except:
+            raise
+
+    tx1_future = _tx1()
+
+    # Queue the second after a delay, we expect this one to work
+    async def _tx2():
+        await sleep(0.01)
+        await my_interface.transmit(my_frame_2)
+
+    tx2_future = _tx2()
+
+    # Set a timeout
+    def _on_timeout():
+        if not tx1_future.done():
+            tx1_future.set_exception(AssertionError("Timed out"))
+        if not tx2_future.done():
+            tx2_future.set_exception(AssertionError("Timed out"))
+
+    get_event_loop().call_later(2.0, _on_timeout)
+
+    # Let the magic happen
+    await gather(tx1_future, tx2_future)
 
     assert len(my_port.sent) == 1
     (send_time, sent_frame) = my_port.sent.pop(0)

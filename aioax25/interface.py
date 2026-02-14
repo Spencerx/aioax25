@@ -12,9 +12,36 @@ import time
 
 from .router import Router
 from ._loop import EventLoopConsumer
+from ._future import FutureWrapperMixin
 
 
-class AX25Interface(Router, EventLoopConsumer):
+def _on_tx_future(interface, frame, callback, future):
+    """
+    Handle a future being resolved for a legacy callback.
+    """
+    if future.exception() is not None:
+        interface._loop.call_soon(
+            partial(
+                callback,
+                interface=interface,
+                frame=frame,
+                exception=future.exception(),
+            )
+        )
+    else:
+        interface._loop.call_soon(
+            partial(callback, interface=interface, frame=frame)
+        )
+
+
+def _future_ready(f):
+    """
+    Return true if the future is ready to take a result.
+    """
+    return (f is not None) and (not f.done())
+
+
+class AX25Interface(Router, FutureWrapperMixin, EventLoopConsumer):
     """
     The AX25Interface class represents a logical AX.25 interface.
     The interface handles basic queueing and routing of message traffic.
@@ -25,7 +52,13 @@ class AX25Interface(Router, EventLoopConsumer):
     """
 
     def __init__(
-        self, kissport, cts_delay=0.01, cts_rand=0.01, log=None, loop=None
+        self,
+        kissport,
+        cts_delay=0.01,
+        cts_rand=0.01,
+        return_future=False,
+        log=None,
+        loop=None,
     ):
         # Initialise the superclass
         super(AX25Interface, self).__init__()
@@ -36,6 +69,7 @@ class AX25Interface(Router, EventLoopConsumer):
         self._log = log
         self._loop = loop
         self._port = kissport
+        self._return_future = return_future
 
         # Message queue
         self._tx_queue = []
@@ -53,24 +87,55 @@ class AX25Interface(Router, EventLoopConsumer):
         # Bind to the KISS port to receive raw messages.
         kissport.received.connect(self._on_receive)
 
-    def transmit(self, frame, callback=None):
+    def transmit(self, frame, callback=None, future=None):
         """
         Enqueue a message for transmission.  Optionally give a call-back
-        function to receive notification of transmission.
+        function or future to receive notification of transmission.
         """
+        if callback is not None:
+            if future is not None:
+                raise ValueError("Pass callback= or future=, not both!")
+            future = self._loop.create_future()
+            future.add_done_callback(
+                partial(
+                    _on_tx_future,
+                    self,
+                    frame,
+                    callback,
+                )
+            )
+        else:
+            future = self._ensure_future(future)
+
         self._log.debug("Adding to queue: %s", frame)
-        self._tx_queue.append((frame, callback))
+        self._tx_queue.append((frame, future))
         if not self._tx_pending:
             self._schedule_tx()
+
+        return future
 
     def cancel_transmit(self, frame):
         """
         Cancel the transmission of a frame.
         """
         self._log.debug("Removing from queue: %s", frame)
-        self._tx_queue = list(
-            filter(lambda item: item[0] is not frame, self._tx_queue)
-        )
+
+        found = False
+        for idx, (f, future) in enumerate(self._tx_queue):
+            if f is frame:
+                # Found it!
+                found = True
+                break
+
+        if not found:
+            self._log.debug("Frame not found in queue")
+            return
+
+        # It is at idx, so remove it first
+        self._tx_queue.pop(idx)
+        if _future_ready(future):
+            self._log.debug("Notifying caller of cancellation")
+            future.set_exception(IOError("Cancelled"))
 
     def _reset_cts(self):
         """
@@ -121,7 +186,7 @@ class AX25Interface(Router, EventLoopConsumer):
         self._tx_pending = None
 
         try:
-            (frame, callback) = self._tx_queue.pop(0)
+            (frame, future) = self._tx_queue.pop(0)
         except IndexError:
             self._log.debug("No traffic to transmit")
             return
@@ -131,6 +196,10 @@ class AX25Interface(Router, EventLoopConsumer):
                 frame.deadline < time.time()
             ):
                 self._log.info("Dropping expired frame: %s", frame)
+                if _future_ready(future):
+                    self._log.debug("Notifying caller of expiry")
+                    future.set_exception(IOError("Frame expired"))
+
                 self._schedule_tx()
                 return
         except AttributeError:  # pragma: no cover
@@ -139,16 +208,27 @@ class AX25Interface(Router, EventLoopConsumer):
             # If it does, we just pretend there is no deadline.
             pass
 
+        tx_future = self._loop.create_future()
+        tx_future.add_done_callback(partial(self._on_tx_done, frame, future))
+
         try:
             self._log.debug("Transmitting %s", frame)
-            self._port.send(frame)
-            if callback:
-                self._log.debug("Notifying sender of %s", frame)
-                self._loop.call_soon(
-                    partial(callback, interface=self, frame=frame)
-                )
-        except:
-            self._log.exception("Failed to transmit %s", frame)
+            self._port.send(frame, tx_future)
+        except Exception as ex:
+            self._log.debug("Synchronous transmit failure for %s", frame)
+            tx_future.set_exception(ex)
+
+    def _on_tx_done(self, frame, caller, future):
+        if future.exception() is not None:
+            self._log.error(
+                "Failed to transmit frame %s: %s", frame, future.exception()
+            )
+            if _future_ready(caller):
+                caller.set_exception(future.exception())
+        else:
+            self._log.debug("Transmitted frame: %s", frame)
+            if _future_ready(caller):
+                caller.set_result(None)
 
         self._reset_cts()
         if len(self._tx_queue) > 0:
