@@ -11,9 +11,10 @@ from functools import partial
 import time
 
 from .router import Router
+from ._loop import EventLoopConsumer
 
 
-class AX25Interface(Router):
+class AX25Interface(Router, EventLoopConsumer):
     """
     The AX25Interface class represents a logical AX.25 interface.
     The interface handles basic queueing and routing of message traffic.
@@ -32,9 +33,6 @@ class AX25Interface(Router):
         if log is None:
             log = logging.getLogger(self.__class__.__module__)
 
-        if loop is None:
-            loop = asyncio.get_event_loop()
-
         self._log = log
         self._loop = loop
         self._port = kissport
@@ -49,7 +47,7 @@ class AX25Interface(Router):
 
         # Clear-to-send expiry
         self._cts_expiry = (
-            loop.time() + cts_delay + (random.random() * cts_rand)
+            self._loop.time() + cts_delay + (random.random() * cts_rand)
         )
 
         # Bind to the KISS port to receive raw messages.

@@ -6,7 +6,7 @@ KISS-based TNCs, managing the byte stuffing/unstuffing.
 """
 
 from enum import Enum
-from asyncio import Protocol, ensure_future, get_event_loop
+from asyncio import Protocol, ensure_future
 from serial_asyncio import create_serial_connection
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
 from .signal import Signal
@@ -14,6 +14,7 @@ from binascii import b2a_hex
 import time
 import logging
 from sys import exc_info
+from ._loop import EventLoopConsumer
 
 
 # Constants
@@ -226,7 +227,7 @@ KISSCommand._register(CMD_SETHW, KISSCmdSetHW)
 # KISS device interface
 
 
-class BaseKISSDevice(object):
+class BaseKISSDevice(EventLoopConsumer):
     """
     Base class for a KISS device.  This may have between 1 and 16 KISS
     ports hanging off it.
@@ -244,8 +245,7 @@ class BaseKISSDevice(object):
     ):
         if log is None:
             log = logging.getLogger(self.__class__.__module__)
-        if loop is None:
-            loop = get_event_loop()
+
         self._log = log
         self._protocol = None
         self._rx_buffer = bytearray()
@@ -899,7 +899,7 @@ def make_device(type, **kwargs):
         traffic.  If not supplied, a default one is created.
       * ``loop`` (``asyncio.AbstractEventLoop``): Asynchronous I/O event loop
         that will schedule the operations for the KISS device.  By default,
-        the current event loop (``asyncio.get_event_loop()``) is used.
+        the current event loop (``asyncio.get_running_loop()``) is used.
 
     +----------------+-------------------------------------------------+
     | ``type`` value | Device type and required arguments              |

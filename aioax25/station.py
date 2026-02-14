@@ -15,11 +15,12 @@ import weakref
 
 from .frame import AX25Address, AX25Path, AX25TestFrame
 
+from ._loop import EventLoopConsumer
 from .peer import AX25Peer, AX25RejectMode
 from .version import AX25Version
 
 
-class AX25Station(object):
+class AX25Station(EventLoopConsumer):
     """
     The AX25Station class represents the station on the AX.25 network
     implemented by the caller of this library.  Notably, it provides
@@ -66,9 +67,6 @@ class AX25Station(object):
     ):
         if log is None:
             log = logging.getLogger(self.__class__.__module__)
-
-        if loop is None:
-            loop = asyncio.get_event_loop()
 
         # Ensure we are running a supported version of AX.25
         protocol = AX25Version(protocol)
