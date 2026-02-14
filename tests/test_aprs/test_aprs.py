@@ -428,6 +428,37 @@ async def test_send_message_oneshot_legacy():
 
 
 @pytest.mark.asyncio
+async def test_send_message_explictpath():
+    """
+    Test that send_message can specify an explicit path.
+    """
+    ax25int = DummyAX25Interface()
+    aprsint = APRSInterface(ax25int, "VK4MSL-10")
+    res = aprsint.send_message(
+        "VK4MDL-7", "Hi", path=("VK4RZA", "VK4RZB"), oneshot=True
+    )
+
+    # We don't get a return value
+    assert res is None
+
+    # No message handler should be registered with the interface
+    assert len(aprsint._pending_msg) == 0
+
+    # The frame is passed to the AX.25 interface
+    assert len(ax25int.transmitted) == 1
+    frame = ax25int.transmitted.pop(0)
+
+    # Frame is a APRS message frame
+    assert isinstance(frame, APRSMessageFrame)
+
+    # Frame has the digipeater path we specified
+    assert str(frame.header.repeaters) == "VK4RZA,VK4RZB"
+
+    # There is no pending messages
+    assert len(aprsint._pending_msg) == 0
+
+
+@pytest.mark.asyncio
 async def test_send_message_oneshot():
     """
     Test that send_message_oneshot in generates a message frame.
