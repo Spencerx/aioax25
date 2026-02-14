@@ -27,3 +27,9 @@ class FutureWrapperMixin(object):
         else:
             # We're being used in one-shot mode
             return None
+
+    def _future_ready(self, f):
+        """
+        Return true if the future is ready to take a result.
+        """
+        return (f is not None) and (not f.done())

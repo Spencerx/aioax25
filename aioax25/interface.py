@@ -34,13 +34,6 @@ def _on_tx_future(interface, frame, callback, future):
         )
 
 
-def _future_ready(f):
-    """
-    Return true if the future is ready to take a result.
-    """
-    return (f is not None) and (not f.done())
-
-
 class AX25Interface(Router, FutureWrapperMixin, EventLoopConsumer):
     """
     The AX25Interface class represents a logical AX.25 interface.
@@ -133,7 +126,7 @@ class AX25Interface(Router, FutureWrapperMixin, EventLoopConsumer):
 
         # It is at idx, so remove it first
         self._tx_queue.pop(idx)
-        if _future_ready(future):
+        if self._future_ready(future):
             self._log.debug("Notifying caller of cancellation")
             future.set_exception(IOError("Cancelled"))
 
@@ -196,7 +189,7 @@ class AX25Interface(Router, FutureWrapperMixin, EventLoopConsumer):
                 frame.deadline < time.time()
             ):
                 self._log.info("Dropping expired frame: %s", frame)
-                if _future_ready(future):
+                if self._future_ready(future):
                     self._log.debug("Notifying caller of expiry")
                     future.set_exception(IOError("Frame expired"))
 
@@ -223,11 +216,11 @@ class AX25Interface(Router, FutureWrapperMixin, EventLoopConsumer):
             self._log.error(
                 "Failed to transmit frame %s: %s", frame, future.exception()
             )
-            if _future_ready(caller):
+            if self._future_ready(caller):
                 caller.set_exception(future.exception())
         else:
             self._log.debug("Transmitted frame: %s", frame)
-            if _future_ready(caller):
+            if self._future_ready(caller):
                 caller.set_result(None)
 
         self._reset_cts()
