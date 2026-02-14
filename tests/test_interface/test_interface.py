@@ -52,6 +52,18 @@ class UnreliableDummyKISS(DummyKISS):
         super(UnreliableDummyKISS, self).send(frame, future)
 
 
+def test_constructor_log():
+    """
+    Test the constructor accepts a logger passed in by the caller.
+    """
+    LOOPMANAGER.loop = None
+    my_port = DummyKISS()
+    my_log = logging.getLogger("test_interface")
+    my_interface = AX25Interface(my_port, log=my_log)
+
+    assert my_interface._log is my_log
+
+
 @pytest.mark.asyncio
 async def test_received_msg_signal():
     """
