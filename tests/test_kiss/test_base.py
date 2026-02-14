@@ -1132,6 +1132,26 @@ def test_send_kiss_cmd_done():
     assert open_queue.result is None
 
 
+def test_send_kiss_cmd_done_already():
+    """
+    Test _send_kiss_cmd does nothing if done and port already open.
+    """
+
+    LOOPMANAGER.loop = None
+    kissdev = DummyKISSDevice(loop=DummyLoop())
+    kissdev._kiss_rem_commands = []
+    open_queue = DummyFutureQueue()
+    kissdev._open_queue = open_queue
+    kissdev._state = KISSDeviceState.OPEN
+
+    # Stub _mark_open
+    def _mark_open(*a):
+        assert False, "Should not have been called"
+    kissdev._mark_open = _mark_open
+
+    kissdev._send_kiss_cmd()
+
+
 def test_send_kiss_cmd_next():
     """
     Test _send_kiss_cmd transmits the next command before calling _check_open
