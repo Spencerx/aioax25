@@ -5,6 +5,7 @@ Dummy IOLoop interface
 """
 
 import time
+import asyncio
 
 
 class DummyLoop(object):
@@ -28,6 +29,9 @@ class DummyLoop(object):
 
     def remove_reader(self, fileno):
         self.readers.pop(fileno)
+
+    def create_future(self):
+        return asyncio.Future()
 
 
 class DummyTimeoutHandle(object):
