@@ -285,7 +285,8 @@ class AX258BitFrame(AX25Frame):
             deadline=deadline,
         )
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
+        # All sub-classes override this function
         return "%s %s: Control=0x%02x\nPayload=%r" % (
             self.__class__.__name__,
             self.header,
@@ -345,7 +346,8 @@ class AX2516BitFrame(AX25Frame):
             deadline=deadline,
         )
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
+        # All sub-classes override this function
         return "%s %s: Control=0x%04x\nPayload=%r" % (
             self.__class__.__name__,
             self.header,
