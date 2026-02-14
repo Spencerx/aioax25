@@ -271,6 +271,87 @@ def test_send_sabme():
     assert peer._state == AX25PeerState.CONNECTING
 
 
+def test_send_sabm_incoming():
+    """
+    Test we can send a SABM (modulo-8) -- incoming connection
+    """
+    station = DummyStation(AX25Address("VK4MSL", ssid=1))
+    peer = DummyAX25Peer(
+        station=station,
+        address=AX25Address("VK4MSL"),
+        repeaters=AX25Path("VK4RZB"),
+        locked_path=True,
+    )
+
+    # Force state to incoming connection
+    peer._state = AX25PeerState.INCOMING_CONNECTION
+
+    # Stub _transmit_frame
+    sent = []
+
+    def _transmit_frame(frame):
+        sent.append(frame)
+
+    peer._transmit_frame = _transmit_frame
+
+    peer._send_sabm()
+
+    try:
+        frame = sent.pop(0)
+    except IndexError:
+        assert False, "No frames were sent"
+
+    assert isinstance(frame, AX25SetAsyncBalancedModeFrame)
+    assert str(frame.header.destination) == "VK4MSL*"  # CONTROL set
+    assert str(frame.header.source) == "VK4MSL-1"  # CONTROL clear
+    assert str(frame.header.repeaters) == "VK4RZB"
+    assert len(sent) == 0
+
+    # State should remain unchanged
+    assert peer._state == AX25PeerState.INCOMING_CONNECTION
+
+
+def test_send_sabme_incoming():
+    """
+    Test we can send a SABM (modulo-128) -- incoming connection
+    """
+    station = DummyStation(AX25Address("VK4MSL", ssid=1))
+    peer = DummyAX25Peer(
+        station=station,
+        address=AX25Address("VK4MSL"),
+        repeaters=AX25Path("VK4RZB"),
+        locked_path=True,
+    )
+    peer._modulo128 = True
+
+    # Force state to incoming connection
+    peer._state = AX25PeerState.INCOMING_CONNECTION
+
+    # Stub _transmit_frame
+    sent = []
+
+    def _transmit_frame(frame):
+        sent.append(frame)
+
+    peer._transmit_frame = _transmit_frame
+
+    peer._send_sabm()
+
+    try:
+        frame = sent.pop(0)
+    except IndexError:
+        assert False, "No frames were sent"
+
+    assert isinstance(frame, AX25SetAsyncBalancedModeExtendedFrame)
+    assert str(frame.header.destination) == "VK4MSL*"  # CONTROL set
+    assert str(frame.header.source) == "VK4MSL-1"  # CONTROL clear
+    assert str(frame.header.repeaters) == "VK4RZB"
+    assert len(sent) == 0
+
+    # State should remain unchanged
+    assert peer._state == AX25PeerState.INCOMING_CONNECTION
+
+
 # SABM response handling
 
 
