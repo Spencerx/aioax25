@@ -5,10 +5,16 @@ from functools import partial
 from signalslot import Signal
 
 from aioax25.aprs import APRSInterface
-from aioax25.frame import AX25UnnumberedInformationFrame, AX25Address
+from aioax25.frame import (
+    AX25UnnumberedInformationFrame,
+    AX25Address,
+)
 from aioax25.aprs.message import APRSMessageFrame, APRSMessageHandler
 
 from ..loop import DummyLoop
+from asyncio import sleep
+
+import pytest
 
 
 class DummyAX25Interface(object):
@@ -21,8 +27,10 @@ class DummyAX25Interface(object):
     def bind(self, callback, callsign, ssid=0, regex=False):
         self.bind_calls.append((callback, callsign, ssid, regex))
 
-    def transmit(self, frame):
+    def transmit(self, frame, future=None):
         self.transmitted.append(frame)
+        if future:
+            future.set_result(None)
 
 
 class DummyMessageHandler(object):
@@ -255,23 +263,24 @@ def test_constructor_bind_override():
     )
 
 
-def test_transmit_exception():
+@pytest.mark.asyncio
+async def test_transmit_success():
     """
-    Test that transmit swallows exceptions.
+    Test that transmit passes on notification of success.
     """
     ax25int = DummyAX25Interface()
 
     # Stub the transmit so it fails
     calls = []
 
-    def stub(*args):
-        calls.append(args)
-        raise RuntimeError("Oopsie")
+    def stub(frame, tx_future):
+        calls.append(frame)
+        tx_future.set_result(None)
 
     ax25int.transmit = stub
 
-    aprsint = APRSInterface(ax25int, "VK4MSL-10")
-    aprsint.transmit(
+    aprsint = APRSInterface(ax25int, "VK4MSL-10", return_future=True)
+    await aprsint.transmit(
         APRSMessageFrame(
             destination="VK4BWI-2",
             source="VK4MSL-10",
@@ -285,7 +294,115 @@ def test_transmit_exception():
     assert len(calls) == 1
 
 
-def test_send_message_oneshot():
+@pytest.mark.asyncio
+async def test_transmit_canelled():
+    """
+    Test that transmit success notification can handle a cancelled future
+    """
+    ax25int = DummyAX25Interface()
+
+    # Stub the transmit so it fails
+    calls = []
+
+    def stub(frame, tx_future):
+        calls.append(frame)
+        tx_future.set_result(None)
+
+    ax25int.transmit = stub
+
+    aprsint = APRSInterface(ax25int, "VK4MSL-10", return_future=True)
+    f = aprsint.transmit(
+        APRSMessageFrame(
+            destination="VK4BWI-2",
+            source="VK4MSL-10",
+            addressee="VK4BWI-2",
+            message=b"testing",
+            msgid=123,
+        )
+    )
+    f.cancel()
+    await sleep(0.1)
+
+    # Transmit should have been called
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_transmit_exception():
+    """
+    Test that transmit handles exceptions.
+    """
+    ax25int = DummyAX25Interface()
+
+    # Stub the transmit so it fails
+    calls = []
+
+    class MyError(IOError):
+        pass
+
+    def stub(*args):
+        calls.append(args)
+        raise MyError("Oopsie")
+
+    ax25int.transmit = stub
+
+    aprsint = APRSInterface(ax25int, "VK4MSL-10", return_future=True)
+    try:
+        await aprsint.transmit(
+            APRSMessageFrame(
+                destination="VK4BWI-2",
+                source="VK4MSL-10",
+                addressee="VK4BWI-2",
+                message=b"testing",
+                msgid=123,
+            )
+        )
+        assert False, "Expected an exception to be passed through"
+    except MyError:
+        pass
+
+    # Transmit should have been called
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_transmit_exception_cancelled():
+    """
+    Test that transmit handles exceptions with cancelled futures.
+    """
+    ax25int = DummyAX25Interface()
+
+    # Stub the transmit so it fails
+    calls = []
+
+    class MyError(IOError):
+        pass
+
+    def stub(*args):
+        calls.append(args)
+        raise MyError("Oopsie")
+
+    ax25int.transmit = stub
+
+    aprsint = APRSInterface(ax25int, "VK4MSL-10", return_future=True)
+    f = aprsint.transmit(
+        APRSMessageFrame(
+            destination="VK4BWI-2",
+            source="VK4MSL-10",
+            addressee="VK4BWI-2",
+            message=b"testing",
+            msgid=123,
+        )
+    )
+    f.cancel()
+    await sleep(0.1)
+
+    # Transmit should have been called
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_send_message_oneshot_legacy():
     """
     Test that send_message in one-shot mode generates a message frame.
     """
@@ -310,12 +427,39 @@ def test_send_message_oneshot():
     assert len(aprsint._pending_msg) == 0
 
 
-def test_send_message_oneshot_replyack():
+@pytest.mark.asyncio
+async def test_send_message_oneshot():
+    """
+    Test that send_message_oneshot in generates a message frame.
+    """
+    ax25int = DummyAX25Interface()
+    aprsint = APRSInterface(ax25int, "VK4MSL-10", return_future=True)
+    res = await aprsint.send_message_oneshot("VK4MDL-7", "Hi")
+
+    # We don't get a return value
+    assert res is None
+
+    # No message handler should be registered with the interface
+    assert len(aprsint._pending_msg) == 0
+
+    # The frame is passed to the AX.25 interface
+    assert len(ax25int.transmitted) == 1
+    frame = ax25int.transmitted.pop(0)
+
+    # Frame is a APRS message frame
+    assert isinstance(frame, APRSMessageFrame)
+
+    # There is no pending messages
+    assert len(aprsint._pending_msg) == 0
+
+
+@pytest.mark.asyncio
+async def test_send_message_oneshot_replyack():
     """
     Test that send_message in one-shot mode refuses to send reply-ack.
     """
     ax25int = DummyAX25Interface()
-    aprsint = APRSInterface(ax25int, "VK4MSL-10")
+    aprsint = APRSInterface(ax25int, "VK4MSL-10", return_future=True)
     try:
         aprsint.send_message(
             "VK4MDL-7",
@@ -328,12 +472,13 @@ def test_send_message_oneshot_replyack():
         assert str(e) == "Cannot send reply-ack in one-shot mode"
 
 
-def test_send_message_replyack():
+@pytest.mark.asyncio
+async def test_send_message_replyack():
     """
     Test that send_message with a replyack message sets replyack.
     """
     ax25int = DummyAX25Interface()
-    aprsint = APRSInterface(ax25int, "VK4MSL-10")
+    aprsint = APRSInterface(ax25int, "VK4MSL-10", return_future=True)
     replymsg = APRSMessageFrame(
         destination="APRS",
         source="VK4MDL-7",
@@ -368,12 +513,13 @@ def test_send_message_replyack():
     assert res.state == APRSMessageHandler.HandlerState.SEND
 
 
-def test_send_message_advreplyack():
+@pytest.mark.asyncio
+async def test_send_message_advreplyack():
     """
     Test that send_message with replyack=True message sets replyack.
     """
     ax25int = DummyAX25Interface()
-    aprsint = APRSInterface(ax25int, "VK4MSL-10")
+    aprsint = APRSInterface(ax25int, "VK4MSL-10", return_future=True)
     res = aprsint.send_message("VK4MDL-7", "Hi", oneshot=False, replyack=True)
 
     # We got back a handler class
@@ -420,7 +566,8 @@ def test_send_message_replyack_notreplyack():
         assert str(e) == "replyack is not a reply-ack message"
 
 
-def test_send_message_confirmable():
+@pytest.mark.asyncio
+async def test_send_message_confirmable():
     """
     Test that send_message in confirmable mode generates a message handler.
     """
@@ -447,7 +594,8 @@ def test_send_message_confirmable():
     assert res.state == APRSMessageHandler.HandlerState.SEND
 
 
-def test_send_response_oneshot():
+@pytest.mark.asyncio
+async def test_send_response_oneshot():
     """
     Test that send_response ignores one-shot messages.
     """
@@ -467,7 +615,8 @@ def test_send_response_oneshot():
     assert len(ax25int.transmitted) == 0
 
 
-def test_send_response_ack():
+@pytest.mark.asyncio
+async def test_send_response_ack():
     """
     Test that send_response with ack=True sends acknowledgement.
     """
@@ -493,7 +642,8 @@ def test_send_response_ack():
     assert frame.payload == b":VK4MSL-10:ack123"
 
 
-def test_send_response_ack_direct_rpt():
+@pytest.mark.asyncio
+async def test_send_response_ack_direct_rpt():
     """
     Test that send_response with direct=True sends response via repeater path
     """
@@ -526,7 +676,8 @@ def test_send_response_ack_direct_rpt():
     ]
 
 
-def test_send_response_rej():
+@pytest.mark.asyncio
+async def test_send_response_rej():
     """
     Test that send_response with ack=False sends rejection.
     """

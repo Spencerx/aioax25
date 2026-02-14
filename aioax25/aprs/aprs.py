@@ -12,6 +12,7 @@ from hashlib import sha256
 
 from .router import APRSRouter
 from ..frame import AX25Address
+from .._future import FutureWrapperMixin
 from .frame import APRSFrame
 from .message import (
     APRSMessageHandler,
@@ -21,7 +22,7 @@ from .message import (
 )
 
 
-class APRSInterface(APRSRouter):
+class APRSInterface(APRSRouter, FutureWrapperMixin):
     def __init__(
         self,
         ax25int,
@@ -75,6 +76,8 @@ class APRSInterface(APRSRouter):
         msgid_modulo=1000,
         # Length of time in seconds before duplicates expire
         deduplication_expiry=28,
+        # Return future objects on async calls
+        return_future=False,
         # Logger instance
         log=None,
     ):
@@ -83,9 +86,7 @@ class APRSInterface(APRSRouter):
             log = logging.getLogger(self.__class__.__module__)
 
         self._log = log
-
-        # Use the same loop as parent AX.25 interface
-        self._loop = ax25int._loop
+        self._return_future = return_future
 
         # Retransmission settings
         self._retransmit_timeout_base = retransmit_timeout_base
@@ -172,19 +173,7 @@ class APRSInterface(APRSRouter):
             if replyack:
                 raise ValueError("Cannot send reply-ack in one-shot mode")
 
-            # One-shot mode, just fire and forget!
-            self._log.info("Send one-shot to %s: %s", addressee, message)
-
-            self.transmit(
-                APRSMessageFrame(
-                    destination=addressee,
-                    source=self.mycall,
-                    addressee=addressee,
-                    message=message,
-                    msgid=None,
-                    repeaters=path,
-                )
-            )
+            self.send_message_oneshot(addressee, message, path)
             return
         elif replyack:
             # If replyack is a message, we are replying to *that* message.
@@ -208,6 +197,33 @@ class APRSInterface(APRSRouter):
         handler._send()
         return handler
 
+    def send_message_oneshot(
+        self, addressee, message, path=None, future=None
+    ):
+        """
+        Send a one-shot APRS message to the named addressee.
+        """
+        if path is None:
+            self._log.debug(
+                "Setting default path for message to %s", addressee
+            )
+            path = self._aprs_path
+
+        # One-shot mode, just fire and forget!
+        self._log.info("Send one-shot to %s: %s", addressee, message)
+
+        return self.transmit(
+            APRSMessageFrame(
+                destination=addressee,
+                source=self.mycall,
+                addressee=addressee,
+                message=message,
+                msgid=None,
+                repeaters=path,
+            ),
+            future=future,
+        )
+
     def send_response(self, message, ack=True, direct=False):
         """
         Send a ACK (or if ack=False, REJ) to a numbered message.  If direct is
@@ -222,6 +238,7 @@ class APRSInterface(APRSRouter):
 
         if direct and (message.header.repeaters is not None):
             response_path = message.header.repeaters.reply
+            self._log.debug("Using direct path: %s", response_path)
         else:
             response_path = None
 
@@ -359,16 +376,31 @@ class APRSInterface(APRSRouter):
         except:
             self._log.exception("Exception occurred emitting signal")
 
-    def transmit(self, frame):
+    def transmit(self, frame, future=None):
         """
         Send an AX.25 frame.
         """
+        future = self._ensure_future(future)
+        tx_future = self._loop.create_future()
+        tx_future.add_done_callback(partial(self._on_tx_done, frame, future))
         self._log.info("Sending %s", frame)
         try:
-            self._ax25int.transmit(frame)
-            self._test_or_add_frame(frame)
-        except:
+            self._ax25int.transmit(frame, tx_future)
+        except Exception as ex:
             self._log.exception("Failed to send %s", frame)
+            tx_future.set_exception(ex)
+
+        return future
+
+    def _on_tx_done(self, frame, caller, future):
+        if future.exception() is not None:
+            # Failure, pass to caller
+            if self._future_ready(caller):
+                caller.set_exception(future.exception())
+        else:
+            self._test_or_add_frame(frame)
+            if self._future_ready(caller):
+                caller.set_result(None)
 
     @property
     def _next_msgid(self):
@@ -380,3 +412,7 @@ class APRSInterface(APRSRouter):
 
     def _on_msg_handler_finish(self, msgid):
         self._pending_msg.pop(msgid, None)
+
+    @property
+    def _loop(self):
+        return self._ax25int._loop
