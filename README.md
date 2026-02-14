@@ -132,6 +132,8 @@ Some optional parameters:
    this size, break the transmissions out the serial port into chunks of
    the given size, and wait `send_block_delay` seconds between each chunk.
    (If your TNC has a small buffer, this may help.)
+ * `return_future`: If set to `True`, the `send()` method will always return a
+   `asyncio.Future()` to await.
 
 This represents the KISS TNC itself, with its ports accessible using the usual
 `__getitem__` syntax:
@@ -145,6 +147,10 @@ These KISS port interfaces just spit out the content of raw AX.25 frames via
 their `received` signals and accept raw AX.25 frames via the `send` method.
 Any object passed to `send` is wrapped in a `bytes` call -- this will
 implicitly call the `__bytes__` method on the object you pass in.
+
+`send` also optionally accepts a `future` argument (`asyncio.Future`).  If
+provided, the KISS device will use that `future` object to notify on
+successfull transmission or transmit failure.
 
 #### Exception handling on the KISS device
 
@@ -203,14 +209,20 @@ exposes the following methods and properties:
 
 Additionally, for transmitting frames, `AX25Interface` adds the following:
 
- * `transmit(frame, callback=None)`: This method allows you to transmit
-   arbitrary AX.25 frames.  They are assumed to be instances of `AX25Frame`
-   (from `aioax25.frame`).  The `callback`, if given, will be called once the
-   frame is sent with the following keyword arguments: `interface` (the
-   `AX25Interface` that sent the frame), `frame` (the frame that was sent).
+ * `transmit(frame, callback=None, future=None)`: This method allows you to
+   transmit arbitrary AX.25 frames.  They are assumed to be instances of
+   `AX25Frame` (from `aioax25.frame`).  The `callback`, if given, will be
+   called once the frame is sent with the following keyword arguments:
+   `interface` (the `AX25Interface` that sent the frame), `frame` (the frame
+   that was sent) and optionally, `exception` (if things failed: this gives
+   the exception object).  Alternatively, `future` can be provided with an
+   `asyncio.Future` object which will be returned by the `transmit()` method:
+   it'll either resolve to `None` (success) or raise an exception if an error
+   is detected.
 
  * `cancel_transmit(frame)`: This cancels a pending transmission of a frame.
-   If the frame has been sent, this has no effect.
+   If the frame has been sent, this has no effect.  The callback will receive
+   an `IOError` with the message `Cancelled` in this situation.
 
 ## APRS Traffic handling
 
@@ -255,15 +267,15 @@ Other optional parameters:
    around at 999.
  * `deduplication_expiry` sets the number of seconds we store message hashes
    for de-duplication purposes.  The default is 28 seconds.
+ * `return_future` causes `transmit()` to return a `asyncio.Future` object.
 
 To send APRS messages, there is `send_message` and `send_response`:
 
  * `send_message(addressee, path=None, oneshot=False, replyack=False)`:
    This sends an APRS message to the addressed station.  If `path` is `None`,
-   then the `aprs_path` is used.  If `oneshot=True`, then the message is sent
-   without a message ID, no ACK/REJ is expected and no retransmissions will be
-   made, the method returns `None`.  Otherwise, a `APRSMessageHandler` (from
-   `aioax25.aprs.message`) is returned.
+   then the `aprs_path` is used.  Setting `oneshot=True` is a
+   backward-compatible alternative to calling `send_message_oneshot`.
+   A `APRSMessageHandler` (from `aioax25.aprs.message`) is returned.
    * If `replyack` is set to `True`, then the message will advertise
      [reply-ack](http://www.aprs.org/aprs11/replyacks.txt) capability to
      the recipient.  Not all APRS implementations support this.
@@ -272,9 +284,15 @@ To send APRS messages, there is `send_message` and `send_response`:
      message will have a reply-ack suffix appended to "ack" the given message.
    * The default of `replyack=False` disables all reply-ack capability (an
      incoming reply-ack message will still be treated as an ACK however).
- * `send_response(message, ack=True)`: This is used when you have received
-   a message from another station -- passing that message to this function
-   will send a `ACK` or `REJ` message to that station.
+ * `send_message_oneshot(addressee, path=None, future=None)`: This sends a
+   one-shot message with no regard as to whether the recipient received it or
+   not.  If provided, `future` (`asyncio.Future`) is used to report
+   success/failure of the frame transmission.  If a future is provided, or
+   the interface has `return_future=True`, a `asyncio.Future` object is
+   returned, otherwise the return value is `None`.
+ * `send_response(message, ack=True, future=None)`: This is used when you
+   have received a message from another station -- passing that message
+   to this function will send a `ACK` or `REJ` message to that station.
 
 ### The `APRSMessageHandler` class
 
