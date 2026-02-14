@@ -3,6 +3,7 @@
 from aioax25.signal import Signal
 from aioax25.interface import AX25Interface
 from aioax25.frame import AX25UnnumberedInformationFrame
+from aioax25._loop import LOOPMANAGER
 
 from ..loop import DummyLoop
 from asyncio import Future, get_event_loop, sleep
@@ -43,6 +44,7 @@ async def test_received_msg_signal():
     """
     Test received messages trigger the received_msg signal.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_frame = AX25UnnumberedInformationFrame(
         destination="VK4BWI", source="VK4MSL", pid=0xF0, payload=b"testing"
@@ -72,6 +74,7 @@ def test_receive_bind():
     """
     Test bind rejects non-strings as call-signs.
     """
+    LOOPMANAGER.loop = None
     my_interface = AX25Interface(DummyKISS(), loop=DummyLoop())
     try:
         my_interface.bind(
@@ -93,6 +96,7 @@ async def test_receive_str_filter():
     """
     Test matching messages can trigger string filters (without SSID).
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     unmatched_filter_received = []
     my_frame = AX25UnnumberedInformationFrame(
@@ -138,6 +142,7 @@ async def test_receive_str_filter_ssid():
     """
     Test matching messages can trigger string filters (with SSID).
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     unmatched_filter_received = []
     my_frame = AX25UnnumberedInformationFrame(
@@ -183,6 +188,7 @@ async def test_receive_re_filter():
     """
     Test matching messages can trigger regex filters (without SSID).
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     unmatched_filter_received = []
     my_frame = AX25UnnumberedInformationFrame(
@@ -232,6 +238,7 @@ async def test_receive_re_filter_ssid():
     """
     Test matching messages can trigger regex filters (with SSID).
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     unmatched_filter_received = []
     my_frame = AX25UnnumberedInformationFrame(
@@ -276,6 +283,7 @@ def test_unbind_notexist_call():
     """
     Test unbinding a receiver for a call that does not exist returns silently.
     """
+    LOOPMANAGER.loop = None
     my_interface = AX25Interface(DummyKISS(), loop=DummyLoop())
     my_receiver = lambda **k: None
 
@@ -287,6 +295,7 @@ def test_unbind_notexist_ssid():
     """
     Test unbinding a receiver for a SSID that does not exist returns silently.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_interface = AX25Interface(my_port, loop=DummyLoop())
 
@@ -303,6 +312,7 @@ def test_unbind_notexist_receiver():
     """
     Test unbinding a receiver that is not bound should not raise error.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_interface = AX25Interface(my_port, loop=DummyLoop())
 
@@ -320,6 +330,7 @@ def test_unbind_str():
     """
     Test unbinding a string receiver removes the receiver and cleans up.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_interface = AX25Interface(my_port, loop=DummyLoop())
 
@@ -337,6 +348,7 @@ def test_unbind_re():
     """
     Test unbinding a regex receiver removes the receiver and cleans up.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_interface = AX25Interface(my_port, loop=DummyLoop())
 
@@ -356,6 +368,7 @@ def test_reception_resets_cts():
     """
     Check the clear-to-send expiry is updated with received traffic.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_frame = AX25UnnumberedInformationFrame(
         destination="VK4BWI", source="VK4MSL", pid=0xF0, payload=b"testing"
@@ -377,6 +390,7 @@ async def test_transmit_waits_cts():
     """
     Test sending a message waits for the channel to be clear.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_frame = AX25UnnumberedInformationFrame(
         destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
@@ -421,6 +435,7 @@ async def test_transmit_cancel():
     """
     Test that pending messages can be cancelled.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_frame = AX25UnnumberedInformationFrame(
         destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
@@ -446,6 +461,7 @@ async def test_transmit_sends_immediate_if_cts():
     """
     Test the interface sends immediately if last activity a long time ago.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_frame = AX25UnnumberedInformationFrame(
         destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
@@ -493,6 +509,7 @@ async def test_transmit_sends_if_not_expired():
     """
     Test the interface sends frame if not expired.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_frame = AX25UnnumberedInformationFrame(
         destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
@@ -541,6 +558,7 @@ async def test_transmit_drops_expired():
     """
     Test the interface drops expired messages.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_frame = AX25UnnumberedInformationFrame(
         destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
@@ -574,6 +592,7 @@ async def test_transmit_waits_if_cts_reset():
     """
     Test the interface waits if CTS timer is reset.
     """
+    LOOPMANAGER.loop = None
     my_port = DummyKISS()
     my_frame = AX25UnnumberedInformationFrame(
         destination="VK4BWI-4", source="VK4MSL", pid=0xF0, payload=b"testing"
@@ -622,6 +641,7 @@ async def test_transmit_handles_failure():
     """
     Test transmit failures don't kill the interface handling.
     """
+    LOOPMANAGER.loop = None
     my_port = UnreliableDummyKISS()
     my_frame_1 = AX25UnnumberedInformationFrame(
         destination="VK4BWI-4",

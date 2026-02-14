@@ -22,22 +22,6 @@ def test_constructor_log():
     assert station._log is log
 
 
-def test_constructor_loop():
-    """
-    Test the AX25Constructor uses the IO loop given.
-    """
-
-    class DummyLoop(object):
-        pass
-
-    loop = DummyLoop()
-    interface = DummyInterface()
-    station = AX25Station(
-        interface=interface, callsign="VK4MSL", ssid=3, loop=loop
-    )
-    assert station._loop is loop
-
-
 def test_constructor_protocol():
     """
     Test the AX25Constructor validates the protocol

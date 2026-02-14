@@ -9,6 +9,7 @@ Subprocess KISS interface unit tests.
 # establishing a connection.
 
 from aioax25 import kiss
+from aioax25._loop import LOOPMANAGER
 import logging
 from asyncio import get_event_loop
 
@@ -20,6 +21,8 @@ async def test_open_connection():
     """
     Test we can open a subprocess without using a shell.
     """
+    LOOPMANAGER.loop = None
+
     # This will receive the arguments passed to subprocess_exec
     connection_args = []
 
@@ -58,6 +61,8 @@ async def test_open_connection_shell():
     """
     Test we can open a subprocess using a shell.
     """
+    LOOPMANAGER.loop = None
+
     # This will receive the arguments passed to subprocess_shell
     connection_args = []
 
@@ -97,6 +102,8 @@ async def test_open_connection_failure():
     """
     Test subprocess failure is detected and handled.
     """
+    LOOPMANAGER.loop = None
+
     # This will receive the arguments passed to subprocess_shell
     connection_args = []
 
@@ -155,6 +162,7 @@ def test_send_raw_data():
     """
     Test data written to the device gets written to the subprocess ``stdin``.
     """
+    LOOPMANAGER.loop = None
 
     # Mock transport
     class DummyStream(object):

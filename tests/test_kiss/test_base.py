@@ -10,6 +10,7 @@ from aioax25.kiss import (
     KISSCommand,
     KISSPort,
 )
+from aioax25._loop import LOOPMANAGER
 from ..loop import DummyLoop
 from asyncio import BaseEventLoop
 
@@ -61,6 +62,7 @@ def test_constructor_own_loop():
     """
     Test constructor uses its own IOLoop if not given one
     """
+    LOOPMANAGER.loop = None
     kissdev = DummyKISSDevice(loop=None)
     assert isinstance(kissdev._loop, BaseEventLoop)
 
@@ -69,6 +71,7 @@ def test_open():
     """
     Test an open call passes to subclass _open
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
 
@@ -91,6 +94,7 @@ def test_open_fail():
     """
     Test an open call that fails triggers the failed signal
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = FailingKISSDevice(loop=loop)
 
@@ -124,6 +128,7 @@ def test_close():
     """
     Test a close call passes to _close
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=False)
 
@@ -150,6 +155,7 @@ def test_close_fail():
     """
     Test a close call that fails triggers the failed signal
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = FailingKISSDevice(loop=loop, reset_on_close=False)
 
@@ -188,6 +194,7 @@ def test_close_reset():
     """
     Test a close call with reset_on_close sends the "return from KISS" frame
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
 
@@ -212,6 +219,7 @@ def test_reset():
     """
     Test a reset call resets a failed device
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=False)
 
@@ -228,6 +236,7 @@ def test_receive():
     """
     Test that a call to _receive stashes the data then schedules _receive_frame.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
     kissdev._receive(b"test incoming data")
@@ -244,6 +253,7 @@ def test_receive_opening():
     """
     Test that a call to _receive whilst in "OPENING" state stashes the data then schedules _check_open.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
 
@@ -265,6 +275,7 @@ def test_receive_frame_garbage():
     """
     Test _receive_frame discards all data when no FEND byte found.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
     kissdev._rx_buffer += b"this should be discarded"
@@ -281,6 +292,7 @@ def test_receive_frame_garbage_start():
     """
     Test _receive_frame discards everything up to the first FEND byte.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
     kissdev._rx_buffer += b"this should be discarded\xc0this should be kept"
@@ -297,6 +309,7 @@ def test_receive_frame_single_fend():
     """
     Test _receive_frame does nothing if there's only a FEND byte.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
     kissdev._rx_buffer += b"\xc0"
@@ -313,6 +326,7 @@ def test_receive_frame_empty():
     """
     Test _receive_frame discards empty frames.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
     kissdev._rx_buffer += b"\xc0\xc0"
@@ -329,6 +343,7 @@ def test_receive_frame_single():
     """
     Test _receive_frame hands a single frame to _dispatch_rx_frame.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
     kissdev._rx_buffer += b"\xc0\x00a single KISS frame\xc0"
@@ -351,6 +366,7 @@ def test_receive_frame_more():
     """
     Test _receive_frame calls itself when more data left.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
     kissdev._rx_buffer += b"\xc0\x00a single KISS frame\xc0more data"
@@ -379,6 +395,7 @@ def test_dispatch_rx_invalid_port():
     """
     Test that _dispatch_rx_port to an undefined port drops the frame.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
     kissdev._dispatch_rx_frame(
@@ -390,6 +407,7 @@ def test_dispatch_rx_exception():
     """
     Test that _dispatch_rx_port drops frame on exception.
     """
+    LOOPMANAGER.loop = None
 
     class DummyPort(object):
         def _receive_frame(self, frame):
@@ -409,6 +427,7 @@ def test_dispatch_rx_valid_port():
     """
     Test that _dispatch_rx_port to a known port delivers to that port.
     """
+    LOOPMANAGER.loop = None
 
     class DummyPort(object):
         def __init__(self):
@@ -436,6 +455,7 @@ def test_send_emptybuf():
     Test that _send adds a FEND then our packet followed by a FEND before
     scheduling a _send_data when TX buffer is empty.
     """
+    LOOPMANAGER.loop = None
 
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
@@ -467,6 +487,7 @@ def test_send_txdata_no_fend():
     Test that _send adds a FEND then our packet followed by a FEND before
     scheduling a _send_data when existing TX buffer does not end in FEND.
     """
+    LOOPMANAGER.loop = None
 
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
@@ -503,6 +524,7 @@ def test_send_txdata_with_fend():
     Test that _send adds our packet followed by a FEND before
     scheduling a _send_data when TX buffer ends in FEND.
     """
+    LOOPMANAGER.loop = None
 
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
@@ -539,6 +561,7 @@ def test_send_txdata_with_fend():
     Test that _send adds our packet followed by a FEND before
     scheduling a _send_data when TX buffer only contains FEND.
     """
+    LOOPMANAGER.loop = None
 
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
@@ -571,6 +594,7 @@ def test_send_data():
     """
     Test that _send_data sends whatever data is buffered up to the block size.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
     kissdev._tx_buffer += b"test output data"
@@ -599,6 +623,7 @@ def test_send_data_fail():
     """
     Test that _send_data puts device in failed state if send fails.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = FailingKISSDevice(loop=loop)
     kissdev._tx_buffer += b"test output data"
@@ -639,6 +664,7 @@ def test_send_data_block_size_exceed_reschedule():
     """
     Test that _send_data re-schedules itself when buffer exceeds block size
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(
         loop=loop, send_block_size=4, send_block_delay=1
@@ -668,6 +694,7 @@ def test_send_data_close_after_send():
     """
     Test that _send_data when closing the device, closes after last send
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
     kissdev._tx_buffer += b"test output data"
@@ -692,6 +719,7 @@ def test_send_data_all_sent_before_close():
     """
     Test that _send_data waits until all data sent before closing.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(
         loop=loop, send_block_size=4, send_block_delay=1
@@ -727,6 +755,7 @@ def test_init_kiss():
     """
     Test _init_kiss sets up the commands to be sent to initialise KISS
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop)
 
@@ -747,6 +776,7 @@ def test_getitem():
     """
     Test __getitem__ returns a port instance.
     """
+    LOOPMANAGER.loop = None
     kissdev = DummyKISSDevice(loop=DummyLoop())
     port = kissdev[7]
     assert isinstance(port, KISSPort)
@@ -754,6 +784,7 @@ def test_getitem():
 
 
 def test_send_kiss_cmd():
+    LOOPMANAGER.loop = None
     kissdev = DummyKISSDevice(loop=DummyLoop())
     kissdev._kiss_rem_commands = []
 
@@ -766,6 +797,7 @@ def test_check_open():
     """
     Test that a call to _check_open hands-off to _send_kiss_cmd.
     """
+    LOOPMANAGER.loop = None
     loop = DummyLoop()
     kissdev = DummyKISSDevice(loop=loop, reset_on_close=True)
 

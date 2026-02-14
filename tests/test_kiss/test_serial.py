@@ -7,6 +7,7 @@ Serial KISS interface unit tests.
 from collections import namedtuple
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
 from aioax25 import kiss
+from aioax25._loop import LOOPMANAGER
 import logging
 from asyncio import get_event_loop, sleep
 
@@ -161,6 +162,7 @@ async def test_open():
     """
     Test we can open the port.
     """
+    LOOPMANAGER.loop = None
     loop = get_event_loop()
     kissdev = TestDevice(device="/dev/ttyS0", baudrate=9600, loop=loop)
     assert kissdev._transport is None
@@ -184,6 +186,7 @@ async def test_open_fail():
     """
     Test open failures are handled.
     """
+    LOOPMANAGER.loop = None
     loop = get_event_loop()
     kissdev = TestDevice(device="/dev/ttyS1", baudrate=9600, loop=loop)
     assert kissdev._transport is None
@@ -219,6 +222,7 @@ async def test_close():
     """
     Test we can close the port.
     """
+    LOOPMANAGER.loop = None
     loop = get_event_loop()
     kissdev = TestDevice(
         device="/dev/ttyS0", baudrate=9600, loop=loop, reset_on_close=False
@@ -263,6 +267,7 @@ def test_on_close_err(logger):
     """
     Test errors are logged if given
     """
+    LOOPMANAGER.loop = None
     loop = get_event_loop()
     kissdev = TestDevice(
         device="/dev/ttyS0",
@@ -325,6 +330,7 @@ async def test_send_raw_data():
     """
     Test _send_raw_data passes the data to the serial device.
     """
+    LOOPMANAGER.loop = None
     loop = get_event_loop()
     kissdev = TestDevice(device="/dev/ttyS0", baudrate=9600, loop=loop)
     assert kissdev._transport is None
@@ -344,6 +350,7 @@ def test_reset_no_transport():
     """
     Test reset handles the "no transport" case
     """
+    LOOPMANAGER.loop = None
     loop = get_event_loop()
     kissdev = TestDevice(device="/dev/ttyS0", baudrate=9600, loop=loop)
     assert kissdev._transport is None
@@ -361,6 +368,7 @@ def test_reset_with_transport():
     """
     Test reset closes the transport if it exists
     """
+    LOOPMANAGER.loop = None
     loop = get_event_loop()
     kissdev = TestDevice(device="/dev/ttyS0", baudrate=9600, loop=loop)
 
@@ -393,6 +401,7 @@ def test_reset_with_transport_err():
     """
     Test reset swallows close errors from the transport
     """
+    LOOPMANAGER.loop = None
     loop = get_event_loop()
     kissdev = TestDevice(device="/dev/ttyS0", baudrate=9600, loop=loop)
 
