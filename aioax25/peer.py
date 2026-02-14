@@ -1574,8 +1574,7 @@ class AX25Peer(object):
         return self._station()._interface().transmit(frame, callback=None)
 
     def _update_state(self, prop, delta=None, value=None, comment=""):
-        if comment:
-            comment = " " + comment
+        comment = " " + comment
 
         if value is None:
             value = getattr(self, prop)
