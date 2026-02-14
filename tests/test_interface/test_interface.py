@@ -4,6 +4,7 @@ from aioax25.signal import Signal
 from aioax25.interface import AX25Interface
 from aioax25.frame import AX25UnnumberedInformationFrame
 
+from ..loop import DummyLoop
 from asyncio import Future, get_event_loop, sleep
 
 import pytest
@@ -71,7 +72,7 @@ def test_receive_bind():
     """
     Test bind rejects non-strings as call-signs.
     """
-    my_interface = AX25Interface(DummyKISS())
+    my_interface = AX25Interface(DummyKISS(), loop=DummyLoop())
     try:
         my_interface.bind(
             callback=lambda *a, **kwa: None,
@@ -275,7 +276,7 @@ def test_unbind_notexist_call():
     """
     Test unbinding a receiver for a call that does not exist returns silently.
     """
-    my_interface = AX25Interface(DummyKISS())
+    my_interface = AX25Interface(DummyKISS(), loop=DummyLoop())
     my_receiver = lambda **k: None
 
     # This should generate no error
@@ -287,7 +288,7 @@ def test_unbind_notexist_ssid():
     Test unbinding a receiver for a SSID that does not exist returns silently.
     """
     my_port = DummyKISS()
-    my_interface = AX25Interface(my_port)
+    my_interface = AX25Interface(my_port, loop=DummyLoop())
 
     my_receiver = lambda **k: None
 
@@ -303,7 +304,7 @@ def test_unbind_notexist_receiver():
     Test unbinding a receiver that is not bound should not raise error.
     """
     my_port = DummyKISS()
-    my_interface = AX25Interface(my_port)
+    my_interface = AX25Interface(my_port, loop=DummyLoop())
 
     my_receiver1 = lambda **k: None
     my_receiver2 = lambda **k: None
@@ -320,7 +321,7 @@ def test_unbind_str():
     Test unbinding a string receiver removes the receiver and cleans up.
     """
     my_port = DummyKISS()
-    my_interface = AX25Interface(my_port)
+    my_interface = AX25Interface(my_port, loop=DummyLoop())
 
     my_receiver = lambda **k: None
 
@@ -337,7 +338,7 @@ def test_unbind_re():
     Test unbinding a regex receiver removes the receiver and cleans up.
     """
     my_port = DummyKISS()
-    my_interface = AX25Interface(my_port)
+    my_interface = AX25Interface(my_port, loop=DummyLoop())
 
     my_receiver = lambda **k: None
 
@@ -360,7 +361,7 @@ def test_reception_resets_cts():
         destination="VK4BWI", source="VK4MSL", pid=0xF0, payload=b"testing"
     )
 
-    my_interface = AX25Interface(my_port)
+    my_interface = AX25Interface(my_port, loop=DummyLoop())
     cts_before = my_interface._cts_expiry
 
     # Pass in a message
