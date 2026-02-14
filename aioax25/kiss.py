@@ -466,9 +466,9 @@ class BaseKISSDevice(EventLoopConsumer):
         command = command.encode("US-ASCII")
         self._rx_buffer = bytearray()
         for bv in command:
-            self._try_send_raw_data(bytes([bv]))
+            self._send_raw_data(bytes([bv]))
             time.sleep(0.1)
-        self._try_send_raw_data(b"\r")
+        self._send_raw_data(b"\r")
         self._loop.call_later(0.5, self._check_open)
 
     def _mark_open(self, ex=None):
