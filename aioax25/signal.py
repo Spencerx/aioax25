@@ -59,14 +59,18 @@ class Signal(BaseSignal):
         an exception handler.  It is the caller's responsibility to ensure
         the slot handles its own exceptions.
         """
-        super(Signal, self).connect(Slot(slot, **kwargs))
+        s = Slot(slot, **kwargs)
+        super(Signal, self).connect(s)
+        return s
 
     def connect_oneshot(self, slot, **kwargs):
         """
         Connect a slot to the signal, and call it exactly once when the
         signal fires.  (Disconnect after calling.)
         """
-        super(Signal, self).connect(OneshotSlot(self, slot, **kwargs))
+        s = OneshotSlot(self, slot, **kwargs)
+        super(Signal, self).connect(s)
+        return s
 
     def _find_slot(self, slot):
         """
