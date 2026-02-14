@@ -493,6 +493,39 @@ def test_send_response_ack():
     assert frame.payload == b":VK4MSL-10:ack123"
 
 
+def test_send_response_ack_direct_rpt():
+    """
+    Test that send_response with direct=True sends response via repeater path
+    """
+    ax25int = DummyAX25Interface()
+    aprsint = APRSInterface(ax25int, "VK4MSL-10")
+    aprsint.send_response(
+        APRSMessageFrame(
+            destination="VK4BWI-2",
+            source="VK4MSL-10",
+            repeaters=["VK4RZB-3*", "VK4RZA-5*"],
+            addressee="VK4BWI-2",
+            message=b"testing",
+            msgid=123,
+        ),
+        ack=True,
+        direct=True,
+    )
+
+    # The APRS message handler will have tried sending the message
+    assert len(ax25int.transmitted) == 1
+    frame = ax25int.transmitted.pop(0)
+
+    # Frame is a APRS message acknowledgement frame
+    assert isinstance(frame, APRSMessageFrame)
+    assert frame.payload == b":VK4MSL-10:ack123"
+    assert frame.header.repeaters is not None
+    assert [str(c) for c in frame.header.repeaters] == [
+        "VK4RZA-5",
+        "VK4RZB-3",
+    ]
+
+
 def test_send_response_rej():
     """
     Test that send_response with ack=False sends rejection.
