@@ -9,10 +9,13 @@ from aioax25.kiss import (
     KISSDeviceState,
     KISSCommand,
     KISSPort,
+    buffer_empty,
 )
 from aioax25._loop import LOOPMANAGER
 from ..loop import DummyLoop
 from asyncio import BaseEventLoop, Future
+
+import pytest
 
 
 class DummyKISSDevice(BaseKISSDevice):
@@ -30,6 +33,9 @@ class DummyKISSDevice(BaseKISSDevice):
         self.close_calls += 1
 
     def _send_raw_data(self, data):
+        if data == b"!":
+            raise DummyKISSDeviceError()
+
         self.transmitted += data
 
     def _ensure_future(self, future):
@@ -41,6 +47,7 @@ class DummyFutureQueue(object):
         self._exception = None
         self._result = None
         self._state = "unset"
+        self.futures = []
 
     @property
     def exception(self):
@@ -51,6 +58,9 @@ class DummyFutureQueue(object):
     def result(self):
         assert self._state == "result"
         return self._result
+
+    def add(self, future):
+        self.futures.append(future)
 
     def set_exception(self, ex):
         self._state = "exception"
@@ -86,6 +96,36 @@ class FailingKISSDevice(BaseKISSDevice):
         raise DummyKISSDeviceError("Send fails")
 
 
+def test_buffer_empty_no_data():
+    """
+    Test buffer_empty considers an empty buffer is really empty
+    """
+    assert buffer_empty(b"") is True
+
+
+def test_buffer_empty_fend():
+    """
+    Test buffer_empty considers an buffer containing only FEND is empty
+    """
+    assert buffer_empty(b"\xc0") is True
+
+
+def test_buffer_empty_not_fend():
+    """
+    Test buffer_empty considers an buffer containing a non-FEND byte is
+    not empty
+    """
+    assert buffer_empty(b"\x00") is False
+
+
+def test_buffer_empty_multiple_bytes():
+    """
+    Test buffer_empty considers an buffer containing multiple bytes is
+    not empty.
+    """
+    assert buffer_empty(b"\xc0\xc0") is False
+
+
 def test_constructor_own_loop():
     """
     Test constructor uses its own IOLoop if not given one
@@ -93,6 +133,56 @@ def test_constructor_own_loop():
     LOOPMANAGER.loop = None
     kissdev = DummyKISSDevice(loop=None)
     assert isinstance(kissdev._loop, BaseEventLoop)
+
+
+@pytest.mark.asyncio
+async def test_ensure_future_given():
+    """
+    Test _ensure_future returns the future it's given
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    kissdev = BaseKISSDevice(loop=loop, return_future=False)
+
+    future = Future()
+    assert kissdev._ensure_future(future) is future, \
+            "Didn't return our future to us"
+
+@pytest.mark.asyncio
+async def test_ensure_future_created():
+    """
+    Test _ensure_future creates a future if given None
+    """
+    LOOPMANAGER.loop = None
+    future = Future()
+
+    class MyLoop(DummyLoop):
+        def __init__(self):
+            super(MyLoop, self).__init__()
+            self.create_future_called = 0
+
+        def create_future(self):
+            self.create_future_called += 1
+            return future
+
+    loop = MyLoop()
+    kissdev = BaseKISSDevice(loop=loop, return_future=True)
+
+    result = kissdev._ensure_future(None)
+    assert loop.create_future_called == 1, \
+            "Didn't create a future via the IO loop"
+    assert result is future, \
+            "Didn't return our future to us"
+
+def test_ensure_future_oneshot():
+    """
+    Test _ensure_future in oneshot mode returns None if given None
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    kissdev = BaseKISSDevice(loop=loop, return_future=False)
+
+    assert kissdev._ensure_future(None) is None
 
 
 def test_open():
@@ -114,6 +204,68 @@ def test_open():
     kissdev.open()
 
     assert kissdev.open_calls == 1
+
+    assert failures == []
+
+
+def test_open_multiple():
+    """
+    Test that calling open on a port that's opening, will add a future
+    to the queue.
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    future = Future()
+    kissdev = DummyKISSDevice(loop=loop)
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
+    assert kissdev.open_calls == 0
+    kissdev.open()
+
+    assert kissdev.open_calls == 1
+
+    # Call again, this time pass in a future
+    kissdev.open(future)
+
+    # We should have just one call, but our future object will be queued.
+    assert kissdev.open_calls == 1
+    assert len(kissdev._open_queue._futures) > 0
+    (f, _) = kissdev._open_queue._futures.pop(0)
+    assert f is future
+
+    assert failures == []
+
+
+def test_open_async():
+    """
+    Test that calling open in async mode adds the future to a queue
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    future = Future()
+    kissdev = DummyKISSDevice(loop=loop, return_future=True)
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
+    assert kissdev.open_calls == 0
+    kissdev.open(future)
+
+    # We should have just one call, the future we were given should be queued.
+    assert kissdev.open_calls == 1
+    assert len(kissdev._open_queue._futures) > 0
+    (f, _) = kissdev._open_queue._futures.pop(0)
+    assert f is future
 
     assert failures == []
 
@@ -175,6 +327,75 @@ def test_close():
     # Now try closing the port
     kissdev.close()
     assert kissdev.close_calls == 1
+
+    assert failures == []
+
+
+def test_close_multiple():
+    """
+    Test calling close whilst closing just adds a future
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    future = Future()
+    kissdev = DummyKISSDevice(loop=loop, reset_on_close=False)
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
+    # Force the port open
+    kissdev._state = KISSDeviceState.OPEN
+
+    assert kissdev.close_calls == 0
+
+    # Now try closing the port
+    kissdev.close()
+    assert kissdev.close_calls == 1
+
+    # Try again passing in a future
+    kissdev.close(future)
+
+    # We should have just one call, the future we were given should be queued.
+    assert kissdev.close_calls == 1
+    assert len(kissdev._close_queue._futures) > 0
+    (f, _) = kissdev._close_queue._futures.pop(0)
+    assert f is future
+
+    assert failures == []
+
+
+def test_close_async():
+    """
+    Test calling close adds future to queue
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    future = Future()
+    kissdev = DummyKISSDevice(loop=loop, reset_on_close=False)
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
+    # Force the port open
+    kissdev._state = KISSDeviceState.OPEN
+
+    assert kissdev.close_calls == 0
+
+    # Now try closing the port
+    kissdev.close(future)
+
+    assert kissdev.close_calls == 1
+    assert len(kissdev._close_queue._futures) > 0
+    (f, _) = kissdev._close_queue._futures.pop(0)
+    assert f is future
 
     assert failures == []
 
@@ -679,6 +900,51 @@ def test_send_data_fail():
     assert ex_v is send_ex
 
 
+def test_send_data_fail_future():
+    """
+    Test that _send_data passes the exception to the future if given one.
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    future = Future()
+    kissdev = FailingKISSDevice(loop=loop)
+    kissdev._tx_buffer += b"test output data"
+    kissdev._tx_future = future
+
+    failures = []
+
+    def _on_fail(**kwargs):
+        failures.append(kwargs)
+
+    kissdev.failed.connect(_on_fail)
+
+    # Send the data out.
+    try:
+        kissdev._send_data()
+        send_ex = None
+    except DummyKISSDeviceError as e:
+        assert str(e) == "Send fails"
+        send_ex = e
+
+    # We should now see this was "sent" and now in 'transmitted'
+    assert bytes(kissdev.transmitted) == b"test output data"
+
+    # That should be the lot
+    assert len(loop.calls) == 0
+
+    # We should be in the failed state
+    assert kissdev.state == KISSDeviceState.FAILED
+    assert len(failures) == 1
+    failure = failures.pop(0)
+
+    assert failure.pop("action") == "send"
+    (ex_c, ex_v, _) = failure.pop("exc_info")
+    assert ex_c is DummyKISSDeviceError
+    assert ex_v is send_ex
+
+    assert future.exception() is send_ex
+
+
 def test_send_data_block_size_exceed_reschedule():
     """
     Test that _send_data re-schedules itself when buffer exceeds block size
@@ -771,6 +1037,49 @@ def test_send_data_all_sent_before_close():
     assert kissdev.close_calls == 0
 
 
+def test_mark_sent_mismatch():
+    """
+    Test _mark_sent flags an exception if the data does not match.
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    kissdev = DummyKISSDevice(
+        loop=loop, send_block_size=4, send_block_delay=1
+    )
+    kissdev._tx_buffer += b"test output data"
+
+    try:
+        kissdev._mark_sent(b"data not in buffer", None)
+        assert False, "Should not have worked"
+    except AssertionError as e:
+        if str(e) != "Did not find sent data in the transmit buffer!":
+            raise
+
+
+def test_mark_sent_mismatch_future():
+    """
+    Test _mark_sent passes mismatch assertions to future.
+    """
+    LOOPMANAGER.loop = None
+    loop = DummyLoop()
+    future = Future()
+    kissdev = DummyKISSDevice(
+        loop=loop, send_block_size=4, send_block_delay=1
+    )
+    kissdev._tx_buffer += b"test output data"
+
+    assert_ex = None
+    try:
+        kissdev._mark_sent(b"data not in buffer", future)
+        assert False, "Should not have worked"
+    except AssertionError as e:
+        if str(e) != "Did not find sent data in the transmit buffer!":
+            raise
+        assert_ex = e
+
+    assert future.exception() is assert_ex
+
+
 def test_init_kiss():
     """
     Test _init_kiss sets up the commands to be sent to initialise KISS
@@ -803,7 +1112,12 @@ def test_getitem():
     assert kissdev._port[7] is port
 
 
-def test_send_kiss_cmd():
+def test_send_kiss_cmd_done():
+    """
+    Test _send_kiss_cmd marks the port as open if there's nothing more to
+    send.
+    """
+
     LOOPMANAGER.loop = None
     kissdev = DummyKISSDevice(loop=DummyLoop())
     kissdev._kiss_rem_commands = []
@@ -816,6 +1130,53 @@ def test_send_kiss_cmd():
 
     assert kissdev._open_queue is None
     assert open_queue.result is None
+
+
+def test_send_kiss_cmd_next():
+    """
+    Test _send_kiss_cmd transmits the next command before calling _check_open
+    again.
+    """
+
+    LOOPMANAGER.loop = None
+    kissdev = DummyKISSDevice(loop=DummyLoop())
+    kissdev._kiss_rem_commands = [
+            "dummy command"
+    ]
+    open_queue = DummyFutureQueue()
+    kissdev._open_queue = open_queue
+    kissdev._state = KISSDeviceState.OPENING
+
+    kissdev._send_kiss_cmd()
+    assert KISSDeviceState.OPENING == kissdev._state
+    assert b"dummy command\r" == bytes(kissdev.transmitted)
+    assert kissdev._open_queue is open_queue
+
+
+def test_send_kiss_cmd_fail():
+    """
+    Test _send_kiss_cmd handles failures in transmission.
+    """
+
+    LOOPMANAGER.loop = None
+    kissdev = DummyKISSDevice(loop=DummyLoop())
+    kissdev._kiss_rem_commands = [
+            "!"  # Make it fail
+    ]
+    open_queue = DummyFutureQueue()
+    kissdev._open_queue = open_queue
+
+    tx_ex = None
+
+    try:
+        kissdev._send_kiss_cmd()
+        assert False, "Should not have passed"
+    except DummyKISSDeviceError as ex:
+        tx_ex = ex
+
+    assert KISSDeviceState.FAILED == kissdev._state
+    assert kissdev._open_queue is None
+    assert open_queue.exception is tx_ex
 
 
 def test_check_open():
