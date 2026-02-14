@@ -4,6 +4,8 @@ from aioax25.aprs.uidigi import APRSDigipeater
 from aioax25.frame import AX25UnnumberedInformationFrame, AX25Address
 from aioax25.signal import Signal
 
+import logging
+
 
 class DummyAPRSInterface(object):
     def __init__(self):
@@ -13,6 +15,16 @@ class DummyAPRSInterface(object):
 
     def transmit(self, frame):
         self.transmitted.append(frame)
+
+
+def test_uidigi_constructor():
+    """
+    Test the constructor can use the logger given to it
+    """
+    log = logging.getLogger("digi")
+    digipeater = APRSDigipeater(log=log)
+
+    assert digipeater._log is log
 
 
 def test_mydigi_read():
