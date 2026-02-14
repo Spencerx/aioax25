@@ -29,7 +29,7 @@ from aioax25.frame import (
     AX2516BitSelectiveRejectFrame,
 )
 from aioax25.peer import AX25PeerState
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 from ..mocks import DummyStation, DummyTimeout
 from functools import partial
 
@@ -43,7 +43,7 @@ def test_connect_not_disconnected():
     Test that calling peer.connect() when not disconnected does nothing.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -71,7 +71,7 @@ def test_connect_when_disconnected():
     Test that calling peer.connect() when disconnected initiates connection
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -107,7 +107,7 @@ def test_on_incoming_connect_timeout_incoming():
     connection.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -135,7 +135,7 @@ def test_on_incoming_connect_timeout_otherstate():
     is ignored
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -163,7 +163,7 @@ def test_on_connect_response_ack():
     state.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -182,7 +182,7 @@ def test_on_connect_response_other():
     disconnected state.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -203,7 +203,7 @@ def test_send_sabm():
     Test we can send a SABM (modulo-8)
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -239,7 +239,7 @@ def test_send_sabme():
     Test we can send a SABM (modulo-128)
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -281,7 +281,7 @@ def test_recv_ignore_frmr():
     (AX.25 2.2 sect 6.3.1)
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -325,7 +325,7 @@ def test_recv_ignore_test():
     (AX.25 2.2 sect 6.3.1)
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -360,7 +360,7 @@ def test_recv_ua():
     Test that UA is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -399,7 +399,7 @@ def test_recv_ui():
     Test that UI is emitted by the received frame signal.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -444,7 +444,7 @@ def test_recv_raw_noconn():
     Test that a raw frame without a connection triggers a DM frame.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -481,7 +481,7 @@ def test_recv_raw_mod8_iframe():
     Test that a I-frame with Mod8 connection is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -536,7 +536,7 @@ def test_recv_raw_mod128_iframe():
     Test that a I-frame with Mod128 connection is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -591,7 +591,7 @@ def test_recv_raw_mod8_sframe():
     Test that a S-frame with Mod8 connection is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -644,7 +644,7 @@ def test_recv_raw_mod128_sframe():
     Test that a S-frame with Mod128 connection is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -697,7 +697,7 @@ def test_recv_iframe_busy():
     Test that an I-frame received while we're busy triggers RNR.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -744,7 +744,7 @@ def test_recv_iframe_mismatched_seq():
     Test that an I-frame with a mismatched sequence number is dropped.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -829,7 +829,7 @@ def test_recv_iframe_mismatched_seq():
     Test that an I-frame with a mismatched sequence number is dropped.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -914,7 +914,7 @@ def test_recv_iframe_matched_seq_nopending():
     Test that an I-frame with a matched sequence number is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1007,7 +1007,7 @@ def test_recv_iframe_matched_seq_lotspending():
     Test that an I-frame with lots of pending I-frames sends RR instead.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1113,7 +1113,7 @@ def test_recv_iframe_matched_seq_iframepending():
     pending.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1208,7 +1208,7 @@ def test_recv_sframe_rr_req_busy():
     Test that RR with P/F set while busy sends RNR
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1257,7 +1257,7 @@ def test_recv_sframe_rr_req_notbusy():
     Test that RR with P/F set while not busy sends RR
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1306,7 +1306,7 @@ def test_recv_sframe_rr_rep():
     Test that RR with P/F clear marks peer not busy
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1358,7 +1358,7 @@ def test_recv_sframe_rnr_req_busy():
     Test that RNR with P/F set while busy sends RNR
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1407,7 +1407,7 @@ def test_recv_sframe_rnr_req_notbusy():
     Test that RNR with P/F set while not busy sends RR
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1456,7 +1456,7 @@ def test_recv_sframe_rnr_rep():
     Test that RNR with P/F clear marks peer busy
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1505,7 +1505,7 @@ def test_recv_sframe_rej_req_busy():
     Test that REJ with P/F set while busy sends RNR
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1576,7 +1576,7 @@ def test_recv_sframe_rej_req_notbusy():
     Test that REJ with P/F set while not busy sends RR
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1647,7 +1647,7 @@ def test_recv_sframe_rej_rep():
     Test that REJ with P/F clear marks peer busy
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1721,7 +1721,7 @@ def test_recv_sframe_srej_pf():
     Test that REJ with P/F set retransmits specified frame
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1758,7 +1758,7 @@ def test_recv_sframe_srej_nopf():
     Test that REJ with P/F clear retransmits specified frame
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1795,7 +1795,7 @@ def test_recv_disc():
     Test that DISC is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1839,7 +1839,7 @@ def test_recv_dm():
     Test that DM is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1886,7 +1886,7 @@ def test_recv_sabm():
     Test that SABM is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1923,7 +1923,7 @@ def test_recv_sabme():
     Test that SABME is handled.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -1963,7 +1963,7 @@ def test_cancel_rr_notification_notpending():
     Test _cancel_rr_notification does nothing if not pending.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -1981,7 +1981,7 @@ def test_cancel_rr_notification_ispending():
     Test _cancel_rr_notification cancels a pending notification.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2001,7 +2001,7 @@ def test_schedule_rr_notification():
     Test _schedule_rr_notification schedules a notification.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2017,7 +2017,7 @@ def test_send_rr_notification_connected():
     Test _send_rr_notification sends a notification if connected.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2053,7 +2053,7 @@ def test_send_rr_notification_disconnected():
     Test _send_rr_notification sends a notification if connected.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2091,7 +2091,7 @@ def test_send_rnr_notification_connected():
     Test _send_rnr_notification sends a notification if connected.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2127,7 +2127,7 @@ def test_send_rnr_notification_connected_recent():
     Test _send_rnr_notification skips notification if the last was recent.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2163,7 +2163,7 @@ def test_send_rnr_notification_disconnected():
     Test _send_rnr_notification sends a notification if connected.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2201,7 +2201,7 @@ def test_send_next_iframe_max_outstanding():
     Test I-frame transmission is suppressed if too many frames are pending.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2260,7 +2260,7 @@ def test_send_next_iframe_nothing_pending():
     Test I-frame transmission is suppressed no data is pending.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2316,7 +2316,7 @@ def test_send_next_iframe_create_next():
     Test I-frame transmission creates a new I-frame if there's data to send.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2389,7 +2389,7 @@ def test_send_next_iframe_existing_next():
     Test I-frame transmission sends existing next frame.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2466,7 +2466,7 @@ def test_update_send_seq():
     Test _update_send_seq copies V(S) to N(S).
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2494,7 +2494,7 @@ def test_update_recv_seq():
     Test _update_recv_seq copies V(R) to N(R).
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path(),
@@ -2525,7 +2525,7 @@ def test_on_receive_sabm_while_connecting():
     Test that SABM is handled safely while UA from SABM pending
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2578,7 +2578,7 @@ def test_on_receive_sabme_init():
     Test the incoming connection is initialised on receipt of SABME.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2632,7 +2632,7 @@ def test_on_receive_sabme_init_unknown_peer_ver():
     Test we switch the peer to AX.25 2.2 mode on receipt of SABME
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2680,7 +2680,7 @@ def test_on_receive_sabme_ax25_20_station():
     Test we reject SABME if station is in AX.25 2.0 mode
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2731,7 +2731,7 @@ def test_on_receive_sabme_ax25_20_peer():
     Test we reject SABME if peer not in AX.25 2.2 mode
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2786,7 +2786,7 @@ def test_init_connection_mod8():
     Test _init_connection can initialise a standard mod-8 connection.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2837,7 +2837,7 @@ def test_init_connection_mod128():
     Test _init_connection can initialise a mod-128 connection.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2891,7 +2891,7 @@ def test_accept_connected_noop():
     Test calling .accept() while not receiving a connection is a no-op.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2923,7 +2923,7 @@ def test_accept_incoming_ua():
     Test calling .accept() with incoming connection sends UA then SABM.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2961,7 +2961,7 @@ def test_reject_connected_noop():
     Test calling .reject() while not receiving a connection is a no-op.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -2993,7 +2993,7 @@ def test_reject_incoming_dm():
     Test calling .reject() with no incoming connection is a no-op.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3031,7 +3031,7 @@ def test_disconnect_disconnected_noop():
     Test calling .disconnect() while not connected is a no-op.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3070,7 +3070,7 @@ def test_disconnect_connected_disc():
     Test calling .disconnect() while connected sends a DISC.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3116,7 +3116,7 @@ def test_start_connect_ack_timer():
     to fire after _ack_timeout.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3153,7 +3153,7 @@ def test_start_disconnect_ack_timer():
     to fire after _ack_timeout.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3189,7 +3189,7 @@ def test_stop_ack_timer_existing():
     Test _stop_ack_timer cancels the existing time-out.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3210,7 +3210,7 @@ def test_stop_ack_timer_notexisting():
     Test _stop_ack_timer does nothing if no time-out pending.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3231,7 +3231,7 @@ def test_negotiate_notsupported(version):
     Test the peer refuses to perform XID if the protocol does not support it.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3254,7 +3254,7 @@ def test_negotiate_supported(version):
     Test the peer refuses to perform XID if the protocol does not support it.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3295,7 +3295,7 @@ def test_on_negotiate_result_unsupported(version, response):
     Test we handle a response that indicates an AX.25 2.0 or earlier station.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3357,7 +3357,7 @@ def test_on_negotiate_result_unsupported_old(version, response):
     Test we do not accidentally "upgrade" on FRMR/DM in response to XID.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -3422,7 +3422,7 @@ def test_on_negotiate_result_success(version):
     Test we upgrade to AX.25 2.2 if XID successful.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),

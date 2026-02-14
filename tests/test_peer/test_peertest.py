@@ -10,7 +10,7 @@ import weakref
 from aioax25.peer import AX25PeerTestHandler
 from aioax25.frame import AX25Address, AX25TestFrame, AX25Path
 from ..mocks import DummyPeer, DummyStation
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 
 
 def test_peertest_go():
@@ -168,7 +168,7 @@ def test_peer_ping():
     Test that calling peer.ping() sets up a AX25PeerTestHandler
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -201,7 +201,7 @@ def test_peer_ping_payload():
     Test that we can supply a payload to the ping request
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -234,7 +234,7 @@ def test_peer_ping_cb():
     Test that peer.ping() attaches callback if given
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -281,7 +281,7 @@ def test_on_receive_test_no_handler():
     Test that a TEST frame with no handler does nothing.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -306,7 +306,7 @@ def test_on_receive_test_stale_handler():
     Test that a TEST frame with stale handler cleans up reference.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -343,7 +343,7 @@ def test_on_receive_test_valid_handler():
     Test that a TEST frame with valid handler pass on frame.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -378,7 +378,7 @@ def test_on_test_done_no_handler():
     Test that a TEST frame with no handler does nothing.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -398,7 +398,7 @@ def test_on_test_done_stale_handler():
     Test that a TEST frame with stale handler cleans up reference.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -427,7 +427,7 @@ def test_on_test_done_wrong_handler():
     Test that a TEST frame with wrong handler ignores signal.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -451,7 +451,7 @@ def test_on_test_done_valid_handler():
     Test that a TEST frame with valid handler pass on frame.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),

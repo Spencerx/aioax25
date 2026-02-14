@@ -6,7 +6,7 @@ Tests for receive path handling
 
 from aioax25.frame import AX25Address, AX25TestFrame, AX25Path
 from ..mocks import DummyStation
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 
 
 def test_rx_path_stats_unlocked():
@@ -14,7 +14,7 @@ def test_rx_path_stats_unlocked():
     Test that incoming message paths are counted when path NOT locked.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -88,7 +88,7 @@ def test_rx_path_stats_locked():
     Test that incoming message paths are NOT counted when path locked.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),

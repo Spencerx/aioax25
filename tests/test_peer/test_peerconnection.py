@@ -7,7 +7,7 @@ Tests for AX25PeerConnectionHandler
 from aioax25.version import AX25Version
 from aioax25.peer import AX25PeerConnectionHandler
 from aioax25.frame import AX25Address, AX25Path
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 from ..mocks import DummyPeer, DummyStation
 
 

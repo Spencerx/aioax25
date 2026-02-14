@@ -10,7 +10,7 @@ from aioax25.frame import (
     AX25UnnumberedAcknowledgeFrame,
 )
 from aioax25.version import AX25Version
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 from ..mocks import DummyStation
 
 
@@ -22,7 +22,7 @@ def test_peer_recv_ua():
     Test _on_receive_ua does nothing if no UA expected.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4MSL-2", "VK4MSL-3"),
@@ -43,7 +43,7 @@ def test_peer_send_ua():
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
     interface = station._interface()
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4MSL-2", "VK4MSL-3"),

@@ -6,7 +6,7 @@ Test handling of clean-up logic
 
 from aioax25.frame import AX25Address, AX25Path
 from aioax25.peer import AX25PeerState
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 from ..mocks import DummyStation, DummyTimeout
 
 # Idle time-out cancellation
@@ -17,7 +17,7 @@ def test_cancel_idle_timeout_inactive():
     Test that calling _cancel_idle_timeout with no time-out is a no-op.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -25,7 +25,7 @@ def test_cancel_idle_timeout_inactive():
     )
 
     # Constructor resets the timer, so discard that time-out handle
-    # This is safe because TestingAX25Peer does not use a real IOLoop
+    # This is safe because DummyAX25Peer does not use a real IOLoop
     peer._idle_timeout_handle = None
 
     peer._cancel_idle_timeout()
@@ -36,7 +36,7 @@ def test_cancel_idle_timeout_active():
     Test that calling _cancel_idle_timeout active time-out cancels it.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -60,7 +60,7 @@ def test_reset_idle_timeout():
     Test that calling _reset_idle_timeout re-creates a time-out object
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -93,7 +93,7 @@ def test_cleanup_disconnected():
     # _cancel_rr_notification will be a no-op in this case.
 
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -136,7 +136,7 @@ def test_cleanup_disconnecting():
     # _cancel_rr_notification will be a no-op in this case.
 
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -176,7 +176,7 @@ def test_cleanup_connecting():
     Test that clean-up whilst connecting sends DM then cancels RR notifications
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -216,7 +216,7 @@ def test_cleanup_connected():
     Test that clean-up whilst connected sends DISC then cancels RR notifications
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),

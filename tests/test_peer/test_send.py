@@ -7,7 +7,7 @@ Tests for AX25Peer transmit segmentation
 from aioax25.frame import (
     AX25Address,
 )
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 from ..mocks import DummyStation
 
 
@@ -19,7 +19,7 @@ def test_peer_send_short():
     Test send accepts short payloads and enqueues a single transmission.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=[],
@@ -44,7 +44,7 @@ def test_peer_send_long():
     Test send accepts long payloads and enqueues multiple transmissions.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=[],
@@ -81,7 +81,7 @@ def test_peer_send_paclen():
     Test send respects PACLEN.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=[],

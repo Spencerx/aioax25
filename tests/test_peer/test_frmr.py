@@ -18,7 +18,7 @@ from aioax25.frame import (
 )
 from aioax25.peer import AX25PeerState
 from ..mocks import DummyPeer, DummyStation
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 
 
 def test_on_receive_frmr_no_handler():
@@ -26,7 +26,7 @@ def test_on_receive_frmr_no_handler():
     Test that a FRMR frame with no handler sends SABM.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -66,7 +66,7 @@ def test_on_receive_frmr_with_handler():
     Test that a FRMR frame passes to given FRMR handler.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -111,7 +111,7 @@ def test_on_receive_in_frmr_drop_test():
     Test _on_receive drops TEST frames when in FRMR state.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -141,7 +141,7 @@ def test_on_receive_in_frmr_drop_ua():
     Test _on_receive drops UA frames when in FRMR state.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -170,7 +170,7 @@ def test_on_receive_in_frmr_pass_sabm():
     Test _on_receive passes SABM frames when in FRMR state.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -202,7 +202,7 @@ def test_on_receive_in_frmr_pass_disc():
     Test _on_receive passes DISC frames when in FRMR state.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),

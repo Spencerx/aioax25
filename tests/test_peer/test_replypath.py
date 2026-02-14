@@ -5,7 +5,7 @@ Tests for AX25Peer reply path handling
 """
 
 from aioax25.frame import AX25Address, AX25Path
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 from ..mocks import DummyStation
 
 
@@ -14,7 +14,7 @@ def test_peer_reply_path_locked():
     Test reply_path with a locked path returns the repeaters given
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -32,7 +32,7 @@ def test_peer_reply_path_predetermined():
     Test reply_path with pre-determined path returns the chosen path
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=None,
@@ -50,7 +50,7 @@ def test_peer_reply_path_weight_score():
     Test reply_path tries to select the "best" scoring path.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=None,
@@ -74,7 +74,7 @@ def test_peer_reply_path_rx_count():
     Test reply_path considers received paths if no rated TX path.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=None,
@@ -104,7 +104,7 @@ def test_weight_path_absolute():
     Test we can set the score for a given path.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=None,
@@ -132,7 +132,7 @@ def test_weight_path_relative():
     Test we can increment the score for a given path.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=None,

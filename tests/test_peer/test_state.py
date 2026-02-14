@@ -6,7 +6,7 @@ Test state transition logic
 
 from aioax25.frame import AX25Address, AX25Path
 from aioax25.peer import AX25PeerState
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 from ..mocks import DummyStation
 
 # Idle time-out cancellation
@@ -17,7 +17,7 @@ def test_state_unchanged():
     Test that _set_conn_state is a no-op if the state is not different.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),
@@ -44,7 +44,7 @@ def test_state_changed():
     Test that _set_conn_state reports and stores state changes.
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4RZB"),

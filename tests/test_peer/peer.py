@@ -9,7 +9,7 @@ from aioax25.version import AX25Version
 from ..mocks import DummyIOLoop, DummyLogger
 
 
-class TestingAX25Peer(AX25Peer):
+class DummyAX25Peer(AX25Peer):
     def __init__(
         self,
         station,
@@ -33,7 +33,7 @@ class TestingAX25Peer(AX25Peer):
         locked_path=False,
         paclen=128,
     ):
-        super(TestingAX25Peer, self).__init__(
+        super(DummyAX25Peer, self).__init__(
             station,
             address,
             repeaters,

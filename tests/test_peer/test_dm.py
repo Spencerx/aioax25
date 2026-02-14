@@ -7,7 +7,7 @@ Tests for AX25Peer DM handling
 from aioax25.frame import AX25Address, AX25Path, AX25DisconnectModeFrame
 from aioax25.peer import AX25PeerState
 from aioax25.version import AX25Version
-from .peer import TestingAX25Peer
+from .peer import DummyAX25Peer
 from ..mocks import DummyStation, DummyTimeout
 
 
@@ -20,7 +20,7 @@ def test_peer_recv_dm():
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
     interface = station._interface()
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4MSL-2", "VK4MSL-3"),
@@ -63,7 +63,7 @@ def test_peer_recv_dm_disconnected():
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
     interface = station._interface()
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4MSL-2", "VK4MSL-3"),
@@ -109,7 +109,7 @@ def test_peer_send_dm():
     """
     station = DummyStation(AX25Address("VK4MSL", ssid=1))
     interface = station._interface()
-    peer = TestingAX25Peer(
+    peer = DummyAX25Peer(
         station=station,
         address=AX25Address("VK4MSL"),
         repeaters=AX25Path("VK4MSL-2", "VK4MSL-3"),
