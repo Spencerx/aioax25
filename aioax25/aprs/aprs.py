@@ -224,7 +224,7 @@ class APRSInterface(APRSRouter, FutureWrapperMixin):
             future=future,
         )
 
-    def send_response(self, message, ack=True, direct=False):
+    def send_response(self, message, ack=True, direct=False, future=None):
         """
         Send a ACK (or if ack=False, REJ) to a numbered message.  If direct is
         true, we send the ACK (or REJ) via the path that the message was received
@@ -242,11 +242,11 @@ class APRSInterface(APRSRouter, FutureWrapperMixin):
         else:
             response_path = None
 
-        self.send_message(
+        self.send_message_oneshot(
             addressee=message.header.source.normalised,
             path=response_path,
             message="%s%s" % ("ack" if ack else "rej", message.msgid),
-            oneshot=True,
+            future=future,
         )
 
     @classmethod
