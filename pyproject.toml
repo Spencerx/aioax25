@@ -41,5 +41,12 @@ line-length = 78
 [tool.pytest.ini_options]
 log_cli = true
 
+[tool.setuptools]
+packages = [
+	"aioax25",
+	"aioax25.aprs",
+	"aioax25.tools",
+]
+
 [tool.setuptools.dynamic]
 version = {attr = "aioax25.__version__"}
