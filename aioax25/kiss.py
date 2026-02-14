@@ -347,7 +347,7 @@ class BaseKISSDevice(EventLoopConsumer):
         Handle incoming data by appending to our receive buffer.  The
         data given may contain partial frames.
         """
-        if self._log.isEnabledFor(logging.DEBUG):
+        if self._log.isEnabledFor(logging.DEBUG):  # pragma: no cover
             self._log.debug("RECV RAW %r", b2a_hex(data).decode())
 
         self._rx_buffer += data
@@ -362,7 +362,7 @@ class BaseKISSDevice(EventLoopConsumer):
         """
         rawframe = bytes(frame)
 
-        if self._log.isEnabledFor(logging.DEBUG):
+        if self._log.isEnabledFor(logging.DEBUG):  # pragma: no cover
             self._log.debug("XMIT FRAME %r", b2a_hex(rawframe).decode())
 
         self._tx_queue.append((rawframe, future))
@@ -442,7 +442,7 @@ class BaseKISSDevice(EventLoopConsumer):
 
         data = self._tx_buffer[: self._send_block_size]
 
-        if self._log.isEnabledFor(logging.DEBUG):
+        if self._log.isEnabledFor(logging.DEBUG):  # pragma: no cover
             self._log.debug("XMIT RAW %r", b2a_hex(data).decode())
 
         self._try_send_raw_data(data, self._tx_future)
