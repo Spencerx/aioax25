@@ -145,8 +145,10 @@ async def test_ensure_future_given():
     kissdev = BaseKISSDevice(loop=loop, return_future=False)
 
     future = Future()
-    assert kissdev._ensure_future(future) is future, \
-            "Didn't return our future to us"
+    assert (
+        kissdev._ensure_future(future) is future
+    ), "Didn't return our future to us"
+
 
 @pytest.mark.asyncio
 async def test_ensure_future_created():
@@ -169,10 +171,11 @@ async def test_ensure_future_created():
     kissdev = BaseKISSDevice(loop=loop, return_future=True)
 
     result = kissdev._ensure_future(None)
-    assert loop.create_future_called == 1, \
-            "Didn't create a future via the IO loop"
-    assert result is future, \
-            "Didn't return our future to us"
+    assert (
+        loop.create_future_called == 1
+    ), "Didn't create a future via the IO loop"
+    assert result is future, "Didn't return our future to us"
+
 
 def test_ensure_future_oneshot():
     """
@@ -1147,6 +1150,7 @@ def test_send_kiss_cmd_done_already():
     # Stub _mark_open
     def _mark_open(*a):
         assert False, "Should not have been called"
+
     kissdev._mark_open = _mark_open
 
     kissdev._send_kiss_cmd()
@@ -1160,9 +1164,7 @@ def test_send_kiss_cmd_next():
 
     LOOPMANAGER.loop = None
     kissdev = DummyKISSDevice(loop=DummyLoop())
-    kissdev._kiss_rem_commands = [
-            "dummy command"
-    ]
+    kissdev._kiss_rem_commands = ["dummy command"]
     open_queue = DummyFutureQueue()
     kissdev._open_queue = open_queue
     kissdev._state = KISSDeviceState.OPENING
@@ -1180,9 +1182,7 @@ def test_send_kiss_cmd_fail():
 
     LOOPMANAGER.loop = None
     kissdev = DummyKISSDevice(loop=DummyLoop())
-    kissdev._kiss_rem_commands = [
-            "!"  # Make it fail
-    ]
+    kissdev._kiss_rem_commands = ["!"]  # Make it fail
     open_queue = DummyFutureQueue()
     kissdev._open_queue = open_queue
 
