@@ -312,7 +312,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
         self._open_queue = None
         self._close_queue = None
         self._reset_on_close = reset_on_close
-        self._kiss_commands = kiss_commands
+        self._kiss_commands = kiss_commands or []
         self._kiss_rem_commands = None
         self._send_block_size = send_block_size
         self._send_block_delay = send_block_delay
@@ -504,6 +504,9 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
         try:
             self._send_raw_data(data)
         except:
+            self._log.debug(
+                "Failed to send data: %s", b2a_hex(data).decode(), exc_info=1
+            )
             (ex_type, ex_value, ex_traceback) = exc_info()
             if future:
                 future.set_exception(ex_value)
@@ -685,6 +688,9 @@ class BaseTransportDevice(BaseKISSDevice):
         ensure_future(self._open_connection())
 
     def _on_connect(self, transport):
+        self._log.debug(
+            "Received transport %r (port state %s)", transport, self._state
+        )
         self._transport = transport
         self._init_kiss()
 
@@ -710,7 +716,22 @@ class BaseTransportDevice(BaseKISSDevice):
         self._state = KISSDeviceState.CLOSED
 
     def _send_raw_data(self, data):
-        self._transport.write(data)
+        if self._transport is None:
+            self._log.debug(
+                "Discarding frame (no connection): %s", b2a_hex(data).decode()
+            )
+            return
+
+        try:
+            self._transport.write(data)
+        except:
+            self._log.debug(
+                "Write failed in state %s (data %s)",
+                self._state,
+                b2a_hex(data).decode(),
+                exc_info=1,
+            )
+            raise
 
     def reset(self):
         super(BaseTransportDevice, self).reset()
