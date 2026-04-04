@@ -688,12 +688,16 @@ class BaseTransportDevice(BaseKISSDevice):
         self._transport = transport
         self._init_kiss()
 
-    def _close(self):
+    def _close_connection(self):
         # Wait for all data to be sent.
         self._transport.flush()
 
         # Close the port
         self._transport.close()
+
+    def _close(self):
+        # Shut down the transport
+        self._close_connection()
 
         # Clean up
         self._on_close()
@@ -845,6 +849,91 @@ class TCPKISSDevice(BaseTransportDevice):
         except:
             self._log.warning("Failed to open TCP connection", exc_info=1)
             self._on_fail("open", exc_info())
+
+
+class TCPKISSServer(BaseTransportDevice):
+    """
+    A KISS device exposed as a TCP serial server.  This allows the software
+    stack to mimic a KISS TNC to another piece of software.
+
+    :param port: Port number where we wish to bind the KISS TNC..
+    :type port: ``int``
+    :param host: Host name or IP address for binding the server.
+    :type device: ``str``
+    :param ssl: Transport Layer Security to set up the TCP server.
+    :type ssl: ``None``, ``ssl.SSLContext``
+    :param family: Socket address family to use when connecting, e.g.
+                   ``socket.AF_INET`` for IPv4, ``socket.AF_INET6`` for IPv6,
+                   or ``0`` for any.
+    :type family: ``int``
+    :param flags: Specifies special socket flags used for the connection.  See
+                  the ``socket`` module for possible flags.
+    :type flags: ``int``
+    :param sock: Specifies an optional existing socket object to use for the
+                 connection.
+    :type sock: ``None`` or ``socket.socket``
+    :param backlog: The number of pending connections we allow.  By default,
+                    1.
+    :type backlog: ``int``
+    :param reuse_address:   tells the kernel to reuse a local socket in
+                            ``TIME_WAIT`` state, without waiting for its
+                            natural timeout to expire. If not specified will
+                            automatically be set to True on UNIX.
+    :type reuse_address:    ``bool`` or ``None``
+    :param reuse_port:  tells the kernel to allow this endpoint to be bound to
+                        the same port as other existing endpoints are bound
+                        to, so long as they all set this flag when being
+                        created. This option is not supported on
+                        Windows.
+    :type reuse_port:   ``bool`` or ``None``
+    :Keyword Arguments: These are passed (via ``BaseTransportDevice``) through
+                        to ``BaseKISSDevice`` unchanged.
+    """
+
+    def __init__(
+        self,
+        port,
+        *args,
+        host=None,
+        ssl=None,
+        family=0,
+        flags=0,
+        sock=None,
+        backlog=1,
+        reuse_address=None,
+        reuse_port=None,
+        **kwargs
+    ):
+        super(TCPKISSServer, self).__init__(*args, **kwargs)
+
+        # Bundle up all the connection arguments together.
+        self._conn_args = dict(
+            host=host,
+            port=port,
+            ssl=ssl,
+            family=family,
+            flags=flags,
+            sock=sock,
+            backlog=backlog,
+            reuse_address=reuse_address,
+            reuse_port=reuse_port,
+        )
+        self._server = None
+
+    async def _open_connection(self):
+        try:
+            self._server = await self._loop.create_server(
+                self._make_protocol, **self._conn_args
+            )
+        except:
+            self._log.warning("Failed to open TCP port", exc_info=1)
+            self._on_fail("open", exc_info())
+
+    def _close_connection(self):
+        super(TCPKISSServer, self)._close_connection()
+
+        # Shut down the server socket
+        self._server.close()
 
 
 class SubprocKISSDevice(BaseTransportDevice):
@@ -1078,6 +1167,10 @@ def make_device(type, **kwargs):
     |                | * ``port`` (``int``):                           |
     |                |   TCP port number for the KISS interface.       |
     +----------------+-------------------------------------------------+
+    | ``tcp_server`` | TCP KISS server (``TCPKISSServer``).            |
+    |                | * ``port`` (``int``):                           |
+    |                |   TCP port number for the KISS interface.       |
+    +----------------+-------------------------------------------------+
     """
 
     if type == "serial":
@@ -1086,5 +1179,7 @@ def make_device(type, **kwargs):
         return SubprocKISSDevice(**kwargs)
     elif type == "tcp":
         return TCPKISSDevice(**kwargs)
+    elif type == "tcp_server":
+        return TCPKISSServer(**kwargs)
     else:
         raise ValueError("Unrecognised type=%r" % (type,))
