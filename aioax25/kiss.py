@@ -915,7 +915,7 @@ class TCPKISSServer(BaseTransportDevice):
         self,
         port,
         *args,
-        host=None,
+        host="::",
         ssl=None,
         family=0,
         flags=0,
@@ -923,9 +923,16 @@ class TCPKISSServer(BaseTransportDevice):
         backlog=1,
         reuse_address=None,
         reuse_port=None,
+        kiss_commands=None,
+        reset_on_close=False,
         **kwargs
     ):
-        super(TCPKISSServer, self).__init__(*args, **kwargs)
+        super(TCPKISSServer, self).__init__(
+            *args,
+            kiss_commands=kiss_commands,
+            reset_on_close=reset_on_close,
+            **kwargs
+        )
 
         # Bundle up all the connection arguments together.
         self._conn_args = dict(
@@ -941,6 +948,13 @@ class TCPKISSServer(BaseTransportDevice):
         )
         self._server = None
 
+    def _on_connect(self, transport):
+        if self._state is KISSDeviceState.CLOSED:
+            # New connection, we're opening again
+            self.open()
+
+        super(TCPKISSServer, self)._on_connect(transport)
+
     async def _open_connection(self):
         try:
             self._server = await self._loop.create_server(
@@ -949,6 +963,16 @@ class TCPKISSServer(BaseTransportDevice):
         except:
             self._log.warning("Failed to open TCP port", exc_info=1)
             self._on_fail("open", exc_info())
+
+    def _on_close(self, exc=None):
+        if exc is not None:
+            self._log.error("Closing port due to error %r", exc)
+
+        self._transport = None
+
+        # Prepare for another possible transport
+        self._state = KISSDeviceState.OPENING
+        self._open_queue = FutureQueue()
 
     def _close_connection(self):
         super(TCPKISSServer, self)._close_connection()
