@@ -137,7 +137,7 @@ class AX25Peer(object):
         """
         Create a peer context for the station named by 'address'.
         """
-        self._station = weakref.ref(station)
+        self._station = weakref.ref(station, self._on_station_cleanup)
         self._repeaters = repeaters
         self._reply_path = reply_path
         self._address = address
@@ -1614,6 +1614,15 @@ class AX25Peer(object):
         self._update_state(
             "_recv_seq", value=self._recv_state, comment="from V(R)"
         )
+
+    def _on_station_cleanup(self, *args):
+        """
+        Handle the shutdown of the station.
+        """
+        self._log.debug("Cleaning up timers")
+        self._stop_ack_timer()
+        self._cancel_idle_timeout()
+        self._cancel_rr_notification()
 
 
 class AX25PeerHelper(object):
