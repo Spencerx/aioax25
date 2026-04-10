@@ -1307,6 +1307,8 @@ class AX25Peer(object):
                 destination=self.address.normcopy(ch=True),
                 source=self._station().address.normcopy(ch=False),
                 repeaters=self.reply_path,
+                cr=True,
+                legacy=self._use_legacy,
             )
         )
         if self._state is not AX25PeerState.INCOMING_CONNECTION:
@@ -1376,6 +1378,8 @@ class AX25Peer(object):
                 destination=self.address.normcopy(ch=True),
                 source=self._station().address.normcopy(ch=False),
                 repeaters=self.reply_path,
+                cr=False,
+                legacy=self._use_legacy,
             )
         )
 
@@ -1389,6 +1393,8 @@ class AX25Peer(object):
                 destination=self.address.normcopy(ch=True),
                 source=self._station().address.normcopy(ch=False),
                 repeaters=self.reply_path,
+                cr=True,
+                legacy=self._use_legacy,
             )
         )
 
@@ -1402,6 +1408,8 @@ class AX25Peer(object):
                 destination=self.address.normcopy(ch=True),
                 source=self._station().address.normcopy(ch=False),
                 repeaters=self.reply_path,
+                cr=False,
+                legacy=self._use_legacy,
             )
         )
 
@@ -1433,6 +1441,8 @@ class AX25Peer(object):
                 vs=self._send_state,
                 frmr_cr=frame.header.cr,
                 frmr_control=frame.control,
+                cr=False,
+                legacy=self._use_legacy,
             )
         )
 
@@ -1476,6 +1486,7 @@ class AX25Peer(object):
                     repeaters=self.reply_path,
                     pf=False,
                     nr=self._recv_state,
+                    cr=False,
                     legacy=self._use_legacy,
                 )
             )
@@ -1494,6 +1505,7 @@ class AX25Peer(object):
                         source=self._station().address.normcopy(ch=False),
                         repeaters=self.reply_path,
                         nr=self._recv_seq,
+                        cr=False,
                         pf=False,
                         legacy=self._use_legacy,
                     )
