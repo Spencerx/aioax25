@@ -714,6 +714,7 @@ class AX25SupervisoryFrameMixin(object):
             source=header.source,
             repeaters=header.repeaters,
             cr=header.cr,
+            src_cr=header.src_cr,
             nr=int((control & cls.CONTROL_NR_MASK) >> cls.CONTROL_NR_SHIFT),
             pf=bool(control & cls.POLL_FINAL),
         )
@@ -726,6 +727,8 @@ class AX25SupervisoryFrameMixin(object):
         repeaters=None,
         pf=False,
         cr=False,
+        src_cr=None,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
@@ -734,6 +737,8 @@ class AX25SupervisoryFrameMixin(object):
             source=source,
             repeaters=repeaters,
             cr=cr,
+            src_cr=src_cr,
+            legacy=legacy,
             timestamp=timestamp,
             deadline=deadline,
         )
