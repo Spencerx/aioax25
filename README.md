@@ -376,7 +376,7 @@ the message is quietly dropped, preventing the memory effect.
 
 This library is built on the following specifications:
 
-* [AX.25 2.0](https://htmlpreview.github.io/?https://github.com/sjlongland/aioax25/blob/feature/connected-mode/doc/ax25-2p0/index.html)
+* [AX.25 2.0](https://htmlpreview.github.io/?https://github.com/sjlongland/aioax25/blob/master/doc/ax25-2p0/index.html)
 * [AX.25 2.2](doc/ax25-2p2/ax25-2p2.pdf)
 * [APRS 1.01](http://www.aprs.org/doc/APRS101.PDF)
 
