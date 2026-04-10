@@ -674,6 +674,7 @@ class AX25InformationFrameMixin(object):
             source=self.header.source,
             repeaters=self.header.repeaters,
             cr=self.header.cr,
+            src_cr=self.header.src_cr,
             pf=self.pf,
             pid=self.pid,
             nr=self.nr,
@@ -794,6 +795,7 @@ class AX25SupervisoryFrameMixin(object):
             source=self.header.source,
             repeaters=self.header.repeaters,
             cr=self.header.cr,
+            src_cr=self.header.src_cr,
             pf=self.pf,
             nr=self.nr,
         )
@@ -1240,6 +1242,7 @@ class AX25BaseUnnumberedFrame(AX25UnnumberedFrame):
             repeaters=header.repeaters,
             pf=bool(control & cls.POLL_FINAL),
             cr=header.cr,
+            src_cr=header.src_cr,
         )
 
     def __init__(
@@ -1249,6 +1252,8 @@ class AX25BaseUnnumberedFrame(AX25UnnumberedFrame):
         repeaters=None,
         pf=None,
         cr=None,
+        src_cr=None,
+        legacy=None,
         timestamp=None,
         deadline=None,
     ):
@@ -1263,7 +1268,9 @@ class AX25BaseUnnumberedFrame(AX25UnnumberedFrame):
             modifier=self.MODIFIER,
             repeaters=repeaters,
             cr=cr,
+            src_cr=src_cr,
             pf=pf,
+            legacy=legacy,
             timestamp=timestamp,
             deadline=deadline,
         )
@@ -1274,6 +1281,7 @@ class AX25BaseUnnumberedFrame(AX25UnnumberedFrame):
             source=self.header.source,
             repeaters=self.header.repeaters,
             cr=self.header.cr,
+            src_cr=self.header.src_cr,
             pf=self.pf,
         )
 
@@ -2072,6 +2080,8 @@ class AX25ExchangeIdentificationFrame(AX25UnnumberedFrame):
         repeaters=None,
         pf=False,
         cr=False,
+        src_cr=None,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
@@ -2079,8 +2089,10 @@ class AX25ExchangeIdentificationFrame(AX25UnnumberedFrame):
             destination=destination,
             source=source,
             repeaters=repeaters,
-            cr=cr,
             pf=pf,
+            cr=cr,
+            src_cr=src_cr,
+            legacy=legacy,
             modifier=self.MODIFIER,
             timestamp=timestamp,
             deadline=deadline,
@@ -2120,6 +2132,7 @@ class AX25ExchangeIdentificationFrame(AX25UnnumberedFrame):
             parameters=[p.copy() for p in self.parameters],
             repeaters=self.header.repeaters,
             cr=self.header.cr,
+            src_cr=self.header.src_cr,
             pf=self.pf,
         )
 
@@ -2159,6 +2172,7 @@ class AX25TestFrame(AX25UnnumberedFrame):
             payload=data,
             pf=bool(control & cls.POLL_FINAL),
             cr=header.cr,
+            src_cr=header.src_cr,
         )
 
     def __init__(
@@ -2169,6 +2183,8 @@ class AX25TestFrame(AX25UnnumberedFrame):
         repeaters=None,
         pf=False,
         cr=False,
+        src_cr=None,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
@@ -2177,7 +2193,9 @@ class AX25TestFrame(AX25UnnumberedFrame):
             source=source,
             repeaters=repeaters,
             cr=cr,
+            src_cr=src_cr,
             pf=pf,
+            legacy=legacy,
             modifier=self.MODIFIER,
             timestamp=timestamp,
             deadline=deadline,
@@ -2199,6 +2217,7 @@ class AX25TestFrame(AX25UnnumberedFrame):
             payload=self.payload,
             repeaters=self.header.repeaters,
             cr=self.header.cr,
+            src_cr=self.header.src_cr,
             pf=self.pf,
         )
 
