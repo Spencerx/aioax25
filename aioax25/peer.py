@@ -1476,6 +1476,7 @@ class AX25Peer(object):
                     repeaters=self.reply_path,
                     pf=False,
                     nr=self._recv_state,
+                    legacy=self._use_legacy,
                 )
             )
 
@@ -1494,6 +1495,7 @@ class AX25Peer(object):
                         repeaters=self.reply_path,
                         nr=self._recv_seq,
                         pf=False,
+                        legacy=self._use_legacy,
                     )
                 )
                 self._last_rnr_sent = now
