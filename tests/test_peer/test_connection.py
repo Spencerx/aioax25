@@ -2041,6 +2041,61 @@ def test_recv_sabme():
     assert frames == [frame]
 
 
+def test_recv_legacy():
+    """
+    Test that a frame with AX.25 1.0 C/R bits triggers a switch to AX.25
+    1.0 mode.
+    """
+    station = DummyStation(AX25Address("VK4MSL", ssid=1))
+    peer = DummyAX25Peer(
+        station=station,
+        address=AX25Address("VK4MSL"),
+        repeaters=AX25Path("VK4RZB"),
+        locked_path=True,
+    )
+
+    # By default, we don't know.
+    assert peer._protocol is AX25Version.UNKNOWN
+
+    # Stub idle time-out handling
+    peer._reset_idle_timeout = lambda: None
+
+    # Create a handler for receiving the UI
+    rx_frames = []
+
+    def _on_receive_frame(frame, **kwargs):
+        assert "peer" in kwargs
+        assert kwargs.pop("peer") is peer
+        assert kwargs == {}
+        rx_frames.append(frame)
+
+    peer.received_frame.connect(_on_receive_frame)
+
+    # Set the state
+    peer._state = AX25PeerState.CONNECTED
+
+    # Inject a frame
+    frame = AX25UnnumberedInformationFrame(
+        destination=AX25Address("VK4MSL-1"),
+        source=AX25Address("VK4MSL"),
+        repeaters=AX25Path("VK4RZB"),
+        pid=0xF0,
+        payload=b"Testing 1 2 3 4",
+        # Both the same == AX.25 1.0
+        cr=True,
+        src_cr=True,
+    )
+
+    peer._on_receive(frame)
+
+    # This should have switched us to AX.25 1.0 mode
+    assert peer._protocol is AX25Version.AX25_10
+
+    # Our handler should have been called
+    assert len(rx_frames) == 1
+    assert rx_frames[0] is frame
+
+
 # RR Notification transmission, scheduling and cancellation
 
 

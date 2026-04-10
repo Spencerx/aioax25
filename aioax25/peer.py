@@ -495,6 +495,13 @@ class AX25Peer(object):
             )
             self._rx_path_count[path] = pathcount
 
+        # Legacy version detection
+        if frame.header.legacy and (self._protocol is AX25Version.UNKNOWN):
+            self._log.info(
+                "Observed AX.25 1.0 C/R pattern, switching to legacy mode"
+            )
+            self._protocol = AX25Version.AX25_10
+
         # AX.25 2.2 sect 6.3.1: "The originating TNC sending a SABM(E) command
         # ignores and discards any frames except SABM, DISC, UA and DM frames
         # from the distant TNC."
