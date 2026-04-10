@@ -553,6 +553,7 @@ def test_recv_raw_noconn():
             source=AX25Address("VK4MSL"),
             repeaters=AX25Path("VK4RZB"),
             payload=b"\x00\x00Testing 1 2 3 4",
+            cr=True,
         )
     )
 
@@ -599,12 +600,14 @@ def test_recv_raw_mod8_iframe():
             source=AX25Address("VK4MSL"),
             repeaters=AX25Path("VK4RZB"),
             payload=b"\xd4\xf0Testing 1 2 3 4",
+            cr=True
         )
     )
 
     # Our I-frame handler should have been called
     assert len(iframes) == 1
     assert isinstance(iframes[0], AX258BitInformationFrame)
+    assert iframes[0].header.cr is True
     assert iframes[0].pid == 0xF0
     assert iframes[0].payload == b"Testing 1 2 3 4"
 
@@ -654,12 +657,14 @@ def test_recv_raw_mod128_iframe():
             source=AX25Address("VK4MSL"),
             repeaters=AX25Path("VK4RZB"),
             payload=b"\x04\x0d\xf0Testing 1 2 3 4",
+            cr=True,
         )
     )
 
     # Our I-frame handler should have been called
     assert len(iframes) == 1
     assert isinstance(iframes[0], AX2516BitInformationFrame)
+    assert iframes[0].header.cr is True
     assert iframes[0].pid == 0xF0
     assert iframes[0].payload == b"Testing 1 2 3 4"
 
@@ -2462,6 +2467,7 @@ def test_send_next_iframe_create_next():
     assert transmitted[1:] == []
     frame = transmitted.pop(0)
     assert isinstance(frame, AX258BitInformationFrame)
+    assert frame.header.cr is True
     assert frame.payload == b"Frame 5"
 
 
@@ -2536,6 +2542,7 @@ def test_send_next_iframe_existing_next():
     assert transmitted[1:] == []
     frame = transmitted.pop(0)
     assert isinstance(frame, AX258BitInformationFrame)
+    assert frame.header.cr is True
     assert frame.payload == b"Frame 4"
 
 

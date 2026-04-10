@@ -1558,6 +1558,8 @@ class AX25Peer(object):
                 nr=self._recv_state,  # N(R) == V(R)
                 ns=ns,
                 pf=False,
+                cr=True,
+                # TODO: expose legacy= flag and set it here!
                 pid=pid,
                 payload=payload,
             )
