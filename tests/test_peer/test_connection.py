@@ -600,7 +600,7 @@ def test_recv_raw_mod8_iframe():
             source=AX25Address("VK4MSL"),
             repeaters=AX25Path("VK4RZB"),
             payload=b"\xd4\xf0Testing 1 2 3 4",
-            cr=True
+            cr=True,
         )
     )
 
@@ -2467,7 +2467,86 @@ def test_send_next_iframe_create_next():
     assert transmitted[1:] == []
     frame = transmitted.pop(0)
     assert isinstance(frame, AX258BitInformationFrame)
+    # Should be an AX.25 2.x "command" frame
     assert frame.header.cr is True
+    assert frame.header.src_cr is False
+    assert frame.payload == b"Frame 5"
+
+
+def test_send_next_iframe_create_next_legacy():
+    """
+    Test I-frame transmission creates a new I-frame if there's data to send. (Legacy AX.25 1.0 mode)
+    """
+    station = DummyStation(AX25Address("VK4MSL", ssid=1))
+    peer = DummyAX25Peer(
+        station=station,
+        address=AX25Address("VK4MSL"),
+        repeaters=AX25Path(),
+        protocol=AX25Version.AX25_10,
+    )
+
+    peer._init_connection(False)
+
+    count = dict(update_send_seq=0, update_recv_seq=0)
+
+    def _update_recv_seq():
+        count["update_recv_seq"] += 1
+
+    peer._update_recv_seq = _update_recv_seq
+
+    def _update_send_seq():
+        count["update_send_seq"] += 1
+
+    peer._update_send_seq = _update_send_seq
+
+    transmitted = []
+
+    def _transmit_frame(frame):
+        transmitted.append(frame)
+
+    peer._transmit_frame = _transmit_frame
+
+    state_updates = []
+
+    def _update_state(prop, **kwargs):
+        kwargs["prop"] = prop
+        state_updates.append(kwargs)
+
+    peer._update_state = _update_state
+
+    peer._state = AX25PeerState.CONNECTED
+    peer._pending_iframes = {
+        0: (0xF0, b"Frame 1"),
+        1: (0xF0, b"Frame 2"),
+        2: (0xF0, b"Frame 3"),
+        3: (0xF0, b"Frame 4"),
+    }
+    peer._pending_data = [
+        (0xF0, b"Frame 5"),
+    ]
+    peer._max_outstanding = 8
+    peer._send_state = 4
+
+    peer._send_next_iframe()
+
+    assert peer._pending_iframes == {
+        0: (0xF0, b"Frame 1"),
+        1: (0xF0, b"Frame 2"),
+        2: (0xF0, b"Frame 3"),
+        3: (0xF0, b"Frame 4"),
+        4: (0xF0, b"Frame 5"),
+    }
+    assert peer._pending_data == []
+    assert count == dict(update_send_seq=1, update_recv_seq=1)
+    assert state_updates == [
+        dict(prop="_send_state", delta=1, comment="send next I-frame")
+    ]
+    assert transmitted[1:] == []
+    frame = transmitted.pop(0)
+    assert isinstance(frame, AX258BitInformationFrame)
+    # Should be an AX.25 1.x "command" frame
+    assert frame.header.cr is True
+    assert frame.header.src_cr is True
     assert frame.payload == b"Frame 5"
 
 

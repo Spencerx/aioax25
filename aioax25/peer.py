@@ -428,6 +428,14 @@ class AX25Peer(object):
 
         self._send_next_iframe()
 
+    @property
+    def _use_legacy(self):
+        """
+        Return True if we should be using legacy AX.25 1.x frames with
+        this station.
+        """
+        return self._protocol is AX25Version.AX25_10
+
     def _cancel_idle_timeout(self):
         """
         Cancel the idle timeout handle
@@ -1559,7 +1567,7 @@ class AX25Peer(object):
                 ns=ns,
                 pf=False,
                 cr=True,
-                # TODO: expose legacy= flag and set it here!
+                legacy=self._use_legacy,
                 pid=pid,
                 payload=payload,
             )
