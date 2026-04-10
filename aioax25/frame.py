@@ -2227,8 +2227,7 @@ class AX25FrameHeader(object):
                 source=addresses[1],
                 repeaters=addresses[2:],
                 cr=addresses[0].ch,
-                # Legacy AX.25 1.x stations set the C bits identically
-                legacy=addresses[0].ch is addresses[1].ch,
+                src_cr=addresses[1].ch,
             ),
             data,
         )
@@ -2240,11 +2239,28 @@ class AX25FrameHeader(object):
         repeaters=None,
         cr=False,
         src_cr=None,
-        legacy=False,
+        legacy=None,
     ):
         self._cr = bool(cr)
-        self._src_cr = src_cr
-        self._legacy = bool(legacy)
+
+        # src_cr and legacy flags; if we're given src_cr,
+        # that should take precedence!  Relevant sections:
+        # AX.25 2.0 spec: § 2.4.1.2
+        # AX.25 2.2 spec: § 6.1.2
+        if src_cr is not None:
+            # legacy flag can be determined by comparing
+            # src_cr and cr: if they match, it's AX.25 1.x
+            self._src_cr = bool(src_cr)
+            self._legacy = self._cr is self._src_cr
+        elif bool(legacy) is True:
+            # AX.25 1.x: src_cr must match cr
+            self._src_cr = self._cr
+            self._legacy = True
+        else:
+            # AX.25 2.x: src_cr must mismatch cr
+            self._src_cr = not self._cr
+            self._legacy = False
+
         self._destination = AX25Address.decode(destination)
         self._source = AX25Address.decode(source)
         self._repeaters = AX25Path(*(repeaters or []))
@@ -2319,14 +2335,7 @@ class AX25FrameHeader(object):
         """
         Command/Response bit in the source address.
         """
-        if self._src_cr is None:
-            if self.legacy:
-                return self.cr  # AX.25 1.x: the C/R bits are identical
-            else:
-                return not self.cr  # AX.25 2.x: the C/R bits are opposite
-        else:
-            # We were given an explicit value.
-            return self._src_cr
+        return self._src_cr
 
     @property
     def tnc2(self):

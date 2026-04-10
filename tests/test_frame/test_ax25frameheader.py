@@ -67,6 +67,20 @@ def test_encode_legacy():
     )
 
 
+def test_encode_legacy_implicit():
+    """
+    Test we can encode an AX.25 1.x frame.  (Specified implicitly)
+    """
+    header = AX25FrameHeader(
+        destination="VK4BWI", source="VK4MSL", cr=False, src_cr=False
+    )
+    hex_cmp(
+        bytes(header),
+        "ac 96 68 84 ae 92 60"  # Destination
+        "ac 96 68 9a a6 98 61",  # Source
+    )
+
+
 def test_decode_with_1digi():
     """
     Test we can decode an AX.25 frame with one digipeater.
