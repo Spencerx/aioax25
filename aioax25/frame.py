@@ -164,11 +164,17 @@ class AX25Frame(object):
         repeaters=None,
         cr=False,
         src_cr=None,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
         self._header = AX25FrameHeader(
-            destination, source, repeaters, cr, src_cr
+            destination=destination,
+            source=source,
+            repeaters=repeaters,
+            cr=cr,
+            src_cr=src_cr,
+            legacy=legacy,
         )
         self._timestamp = timestamp or time.time()
         self._deadline = deadline
@@ -272,6 +278,7 @@ class AX258BitFrame(AX25Frame):
         repeaters=None,
         cr=False,
         src_cr=None,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
@@ -281,6 +288,7 @@ class AX258BitFrame(AX25Frame):
             repeaters=repeaters,
             cr=cr,
             src_cr=src_cr,
+            legacy=legacy,
             timestamp=timestamp,
             deadline=deadline,
         )
@@ -333,6 +341,7 @@ class AX2516BitFrame(AX25Frame):
         repeaters=None,
         cr=False,
         src_cr=None,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
@@ -342,6 +351,7 @@ class AX2516BitFrame(AX25Frame):
             repeaters=repeaters,
             cr=cr,
             src_cr=src_cr,
+            legacy=legacy,
             timestamp=timestamp,
             deadline=deadline,
         )
@@ -388,6 +398,7 @@ class AX25RawFrame(AX25Frame):
         repeaters=None,
         cr=False,
         src_cr=None,
+        legacy=False,
         payload=None,
         timestamp=None,
         deadline=None,
@@ -398,6 +409,7 @@ class AX25RawFrame(AX25Frame):
             repeaters=repeaters,
             cr=cr,
             src_cr=src_cr,
+            legacy=legacy,
             timestamp=timestamp,
             deadline=deadline,
         )
@@ -482,6 +494,7 @@ class AX25UnnumberedFrame(AX258BitFrame):
         pf=False,
         cr=False,
         src_cr=None,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
@@ -491,6 +504,7 @@ class AX25UnnumberedFrame(AX258BitFrame):
             repeaters=repeaters,
             cr=cr,
             src_cr=src_cr,
+            legacy=legacy,
             timestamp=timestamp,
             deadline=deadline,
         )
@@ -572,6 +586,7 @@ class AX25InformationFrameMixin(object):
         repeaters=None,
         pf=False,
         cr=False,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
@@ -580,6 +595,7 @@ class AX25InformationFrameMixin(object):
             source=source,
             repeaters=repeaters,
             cr=cr,
+            legacy=legacy,
             timestamp=timestamp,
             deadline=deadline,
         )
@@ -934,6 +950,7 @@ class AX25UnnumberedInformationFrame(AX25UnnumberedFrame):
         pf=False,
         cr=False,
         src_cr=None,
+        legacy=False,
         timestamp=None,
         deadline=None,
     ):
@@ -941,9 +958,10 @@ class AX25UnnumberedInformationFrame(AX25UnnumberedFrame):
             destination=destination,
             source=source,
             repeaters=repeaters,
+            pf=pf,
             cr=cr,
             src_cr=src_cr,
-            pf=pf,
+            legacy=legacy,
             modifier=self.MODIFIER,
             timestamp=timestamp,
             deadline=deadline,
@@ -1085,14 +1103,16 @@ class AX25FrameRejectFrame(AX25UnnumberedFrame):
         pf=False,
         cr=False,
         src_cr=None,
+        legacy=False,
     ):
         super(AX25FrameRejectFrame, self).__init__(
             destination=destination,
             source=source,
             repeaters=repeaters,
             cr=cr,
-            src_cr=src_cr,
             pf=pf,
+            src_cr=src_cr,
+            legacy=legacy,
             modifier=self.MODIFIER,
         )
 
