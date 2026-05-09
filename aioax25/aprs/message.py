@@ -177,7 +177,7 @@ class APRSMessageHandler(object):
 
 class APRSMessageFrame(APRSFrame):
     MSGID_RE = re.compile(r"{([0-9A-Za-z]+)(}[0-9A-Za-z]*)?(\r?)$")
-    ACKREJ_RE = re.compile(r"^(ack|rej)([0-9A-Za-z]+)$")
+    ACKREJ_RE = re.compile(r"^(ack|rej)([0-9A-Za-z]+)(\r?)$")
 
     @classmethod
     def decode(cls, uiframe, payload, log):
