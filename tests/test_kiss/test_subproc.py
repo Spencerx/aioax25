@@ -158,7 +158,8 @@ async def test_open_connection_failure():
         loop.subprocess_shell = orig_subprocess_shell
 
 
-def test_send_raw_data():
+@pytest.mark.asyncio
+async def test_send_raw_data():
     """
     Test data written to the device gets written to the subprocess ``stdin``.
     """
