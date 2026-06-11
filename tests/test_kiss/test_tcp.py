@@ -130,3 +130,90 @@ async def test_open_connection_fail():
     finally:
         # Restore mock
         loop.create_connection = orig_create_connection
+
+
+@pytest.mark.asyncio
+async def test_send_raw_data_no_transport():
+    LOOPMANAGER.loop = None
+
+    loop = get_event_loop()
+
+    # Stub the create_connection method
+    orig_create_connection = loop.create_connection
+
+    async def _create_connection(proto_factory, **kwargs):
+        raise IOError("Not implemented")
+
+    loop.create_connection = _create_connection
+
+    try:
+        device = kiss.TCPKISSDevice(
+            host="localhost",
+            port=5432,
+            loop=loop,
+            log=logging.getLogger(__name__),
+        )
+
+        # We have no active transport connected
+        assert device._transport is None, \
+                "Transport is present when it should not be"
+
+        # Try sending raw data, nothing should happen
+        device._send_raw_data(b"boo!")
+    finally:
+        # Restore mock
+        loop.create_connection = orig_create_connection
+
+
+@pytest.mark.asyncio
+async def test_send_raw_data_write_failed():
+    LOOPMANAGER.loop = None
+
+    loop = get_event_loop()
+
+    # Stub the create_connection method
+    orig_create_connection = loop.create_connection
+
+    async def _create_connection(proto_factory, **kwargs):
+        raise IOError("Not implemented")
+
+    loop.create_connection = _create_connection
+
+    # We will make a mock transport that will fail writes
+    class TransportWriteError(IOError):
+        pass
+
+    class DummyTransport(object):
+        def __init__(self):
+            self.written = bytearray()
+
+        def write(self, data):
+            self.written += data
+            raise TransportWriteError()
+
+
+    try:
+        device = kiss.TCPKISSDevice(
+            host="localhost",
+            port=5432,
+            loop=loop,
+            log=logging.getLogger(__name__),
+        )
+
+        # We have no active transport connected
+        assert device._transport is None, \
+                "Transport is present when it should not be"
+
+        # Inject a transport
+        device._transport = DummyTransport()
+
+        # Try sending raw data, nothing should happen
+        try:
+            device._send_raw_data(b"boo!")
+            assert False, "Expected TransportWriteError, got nothing!"
+        except TransportWriteError:
+            # This is what we wanted to see!
+            pass
+    finally:
+        # Restore mock
+        loop.create_connection = orig_create_connection
