@@ -211,7 +211,8 @@ def test_open():
     assert failures == []
 
 
-def test_open_multiple():
+@pytest.mark.asyncio
+async def test_open_multiple():
     """
     Test that calling open on a port that's opening, will add a future
     to the queue.
@@ -245,7 +246,8 @@ def test_open_multiple():
     assert failures == []
 
 
-def test_open_async():
+@pytest.mark.asyncio
+async def test_open_async():
     """
     Test that calling open in async mode adds the future to a queue
     """
@@ -334,7 +336,8 @@ def test_close():
     assert failures == []
 
 
-def test_close_multiple():
+@pytest.mark.asyncio
+async def test_close_multiple():
     """
     Test calling close whilst closing just adds a future
     """
@@ -371,7 +374,8 @@ def test_close_multiple():
     assert failures == []
 
 
-def test_close_async():
+@pytest.mark.asyncio
+async def test_close_async():
     """
     Test calling close adds future to queue
     """
@@ -799,7 +803,8 @@ def test_send_data():
     assert failures == []
 
 
-def test_send_data_emptybuffer():
+@pytest.mark.asyncio
+async def test_send_data_emptybuffer():
     """
     Test that _send_data will pick the next frame off the transmit queue if
     it has nothing to send in the buffer.
@@ -903,7 +908,8 @@ def test_send_data_fail():
     assert ex_v is send_ex
 
 
-def test_send_data_fail_future():
+@pytest.mark.asyncio
+async def test_send_data_fail_future():
     """
     Test that _send_data passes the exception to the future if given one.
     """
@@ -1059,7 +1065,8 @@ def test_mark_sent_mismatch():
             raise
 
 
-def test_mark_sent_mismatch_future():
+@pytest.mark.asyncio
+async def test_mark_sent_mismatch_future():
     """
     Test _mark_sent passes mismatch assertions to future.
     """
