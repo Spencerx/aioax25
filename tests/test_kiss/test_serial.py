@@ -263,7 +263,7 @@ async def test_close():
 
 
 @pytest.mark.asyncio
-def test_on_close_err(logger):
+async def test_on_close_err(logger):
     """
     Test errors are logged if given
     """
