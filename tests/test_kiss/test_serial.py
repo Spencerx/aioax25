@@ -346,7 +346,8 @@ async def test_send_raw_data():
     assert bytes(connection.port.tx_buffer) == b"a test frame"
 
 
-def test_reset_no_transport():
+@pytest.mark.asyncio
+async def test_reset_no_transport():
     """
     Test reset handles the "no transport" case
     """
@@ -364,7 +365,8 @@ def test_reset_no_transport():
     assert kissdev.state == kiss.KISSDeviceState.CLOSED
 
 
-def test_reset_with_transport():
+@pytest.mark.asyncio
+async def test_reset_with_transport():
     """
     Test reset closes the transport if it exists
     """
@@ -397,7 +399,8 @@ def test_reset_with_transport():
     assert transport.closed
 
 
-def test_reset_with_transport_err():
+@pytest.mark.asyncio
+async def test_reset_with_transport_err():
     """
     Test reset swallows close errors from the transport
     """
