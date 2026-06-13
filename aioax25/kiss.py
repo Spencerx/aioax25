@@ -5,7 +5,6 @@ KISS serial interface handler.  This allows basic support for talking to
 KISS-based TNCs, managing the byte stuffing/unstuffing.
 """
 
-from enum import Enum
 from asyncio import Protocol, ensure_future
 from serial_asyncio import create_serial_connection
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
@@ -17,6 +16,7 @@ import logging
 from sys import exc_info
 from ._loop import EventLoopConsumer
 from ._future import FutureWrapperMixin
+from .frame import AX25TransportState, AX25FrameTransport
 
 # Constants
 
@@ -38,26 +38,7 @@ CMD_RETURN = 0x0F
 
 # States
 
-
-class KISSDeviceState(Enum):
-    """
-    States permitted by a KISS device:
-    - CLOSED: Serial port is closed
-    - INIT: Serial port just opened, TNC may be in TNC2-mode and
-            the library is attempting to put it into KISS mode.
-    - OPEN: Serial port is open, TNC in KISS mode.
-    - CLOSING: Close instruction just received.  Putting TNC back into
-      TNC2-mode if requested then closing the port.
-    - FAILED: A critical error has occurred and the port is now no longer
-      functional.
-    """
-
-    CLOSED = 0
-    OPENING = 1
-    OPEN = 2
-    CLOSING = 3
-    FAILED = -1
-
+KISSDeviceState = AX25TransportState
 
 # Command classes
 
@@ -1035,7 +1016,7 @@ class SubprocKISSDevice(BaseTransportDevice):
 # Port interface
 
 
-class KISSPort(object):
+class KISSPort(AX25FrameTransport):
     """
     A KISS port represents a port interface on a KISS device.  There can be
     a maximum of 16 ports per device, identified by a 4-bit integer.
@@ -1045,18 +1026,21 @@ class KISSPort(object):
         """
         Create a new port attached to the given device.
         """
+        super(KISSPort, self).__init__()
         self._device = device
         self._port = port
         self._log = log
 
-        # Signal for receiving packets
-        # Keyword arguments:
-        # - frame: the raw KISS frame as a `bytes()` object
-        self.received = Signal()
-
     @property
     def port(self):
         return self._port
+
+    @property
+    def state(self):
+        """
+        Return the current state of the underlying KISS device.
+        """
+        return self._device.state
 
     def send(self, frame, future=None):
         """
