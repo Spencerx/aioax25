@@ -323,7 +323,7 @@ def test_msghandler_first_send():
 
     # There should be a pending time-out recorded
     assert len(aprshandler._loop.calls) == 1
-    (calltime, callfunc) = aprshandler._loop.calls.pop(0)
+    calltime, callfunc = aprshandler._loop.calls.pop(0)
 
     # Should be at least 5 seconds from now, calling _on_timeout
     assert (calltime) > (aprshandler._loop.time() + 5.0)
@@ -355,7 +355,7 @@ def test_msghandler_subsequent_send():
 
     # There should be a pending time-out recorded
     assert len(aprshandler._loop.calls) == 1
-    (calltime, callfunc) = aprshandler._loop.calls.pop(0)
+    calltime, callfunc = aprshandler._loop.calls.pop(0)
 
     # Should be at least 5 seconds from now, calling _on_timeout
     assert (calltime) > (aprshandler._loop.time() + 5.0)
@@ -472,7 +472,7 @@ def test_on_timeout():
 
     # There should be a pending _send recorded
     assert len(aprshandler._loop.calls) == 1
-    (calltime, callfunc) = aprshandler._loop.calls.pop(0)
+    calltime, callfunc = aprshandler._loop.calls.pop(0)
 
     # Should be pretty much now, calling _send
     assert calltime > (aprshandler._loop.time() - 0.01)

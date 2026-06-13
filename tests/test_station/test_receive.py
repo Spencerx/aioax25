@@ -35,7 +35,7 @@ def test_testframe_cmd_echo():
     assert interface.unbind_calls == []
     assert len(interface.transmit_calls) == 1
 
-    (tx_call_args, tx_call_kwargs) = interface.transmit_calls.pop()
+    tx_call_args, tx_call_kwargs = interface.transmit_calls.pop()
     assert tx_call_kwargs == {}
     assert len(tx_call_args) == 1
     frame = tx_call_args[0]
@@ -85,7 +85,7 @@ def test_route_testframe_reply():
     # This should have gone to peer1, not peer2
     assert peer2.on_receive_calls == []
     assert len(peer1.on_receive_calls) == 1
-    (rx_call_args, rx_call_kwargs) = peer1.on_receive_calls.pop()
+    rx_call_args, rx_call_kwargs = peer1.on_receive_calls.pop()
     assert rx_call_kwargs == {}
     assert len(rx_call_args) == 1
     assert rx_call_args[0] is txframe
@@ -128,7 +128,7 @@ def test_route_incoming_msg():
     # This should have gone to peer2, not peer1
     assert peer1.on_receive_calls == []
     assert len(peer2.on_receive_calls) == 1
-    (rx_call_args, rx_call_kwargs) = peer2.on_receive_calls.pop()
+    rx_call_args, rx_call_kwargs = peer2.on_receive_calls.pop()
     assert rx_call_kwargs == {}
     assert len(rx_call_args) == 1
     assert rx_call_args[0] is txframe

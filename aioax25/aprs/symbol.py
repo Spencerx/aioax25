@@ -6,7 +6,6 @@ APRS symbol handling.
 
 from enum import Enum
 
-
 PRI_SYMBOL = "/"
 SEC_SYMBOL = "\\"
 NUM_UNCOMPRESSED = "0123456789"
@@ -64,7 +63,7 @@ class APRSSymbol(object):
         if overlay is not None:
             if table != APRSSymbolTable.SECONDARY:
                 raise ValueError("Overlays only available on secondary table")
-            (overlay_type, overlay) = APRSOverlayType.identify(overlay)
+            overlay_type, overlay = APRSOverlayType.identify(overlay)
         else:
             overlay_type = None
 

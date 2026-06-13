@@ -18,7 +18,7 @@ class DummyLogger(object):
 
     def _addrecord(self, log_method, log_args, log_kwargs, _exc_info=False):
         if _exc_info:
-            (ex_type, ex_val, ex_tb) = exc_info()
+            ex_type, ex_val, ex_tb = exc_info()
         else:
             ex_type = None
             ex_val = None

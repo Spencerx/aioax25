@@ -503,7 +503,7 @@ async def test_transmit_waits_cts():
     await transmit_future
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame)
     assert ((time.monotonic() - send_time)) < (0.05)
@@ -564,7 +564,7 @@ async def test_transmit_cancel_notfound():
 
     # Only the first frame should have been sent
     assert len(my_port.sent) > 0
-    (_, frame) = my_port.sent.pop(0)
+    _, frame = my_port.sent.pop(0)
     assert frame is my_frame
 
 
@@ -694,7 +694,7 @@ async def test_transmit_sends_immediate_if_cts():
     await transmit_future
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame)
     assert ((time.monotonic() - send_time)) < (0.05)
@@ -743,7 +743,7 @@ async def test_transmit_sends_if_not_expired():
     await transmit_future
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame)
     assert ((time.monotonic() - send_time)) < (0.05)
@@ -825,7 +825,7 @@ async def test_transmit_waits_if_cts_reset():
     await transmit_future
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame)
     assert ((time.monotonic() - send_time)) < (0.05)
@@ -901,7 +901,7 @@ async def test_transmit_handles_sync_failure_cb():
     await transmit_future
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame_2)
     assert ((time.monotonic() - send_time)) < (0.05)
@@ -976,7 +976,7 @@ async def test_transmit_handles_async_failure_cb():
     await transmit_future
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame_2)
     assert ((time.monotonic() - send_time)) < (0.05)
@@ -1045,7 +1045,7 @@ async def test_transmit_handles_sync_failure_f():
     await gather(tx1_future, tx2_future)
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame_2)
     assert ((time.monotonic() - send_time)) < (0.05)
@@ -1114,7 +1114,7 @@ async def test_transmit_handles_async_failure_f():
     await gather(tx1_future, tx2_future)
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame_2)
     assert ((time.monotonic() - send_time)) < (0.05)
@@ -1172,7 +1172,7 @@ async def test_transmit_handles_async_failure_f_cancel():
     await tx2_future
 
     assert len(my_port.sent) == 1
-    (send_time, sent_frame) = my_port.sent.pop(0)
+    send_time, sent_frame = my_port.sent.pop(0)
 
     assert bytes(sent_frame) == bytes(my_frame_2)
     assert ((time.monotonic() - send_time)) < (0.05)

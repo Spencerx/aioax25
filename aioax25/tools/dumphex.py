@@ -19,7 +19,6 @@ import logging
 import asyncio
 import re
 
-
 SOCAT_HEX_RE = re.compile(r"^ [0-9a-f]{2}[0-9a-f ]*\n*$")
 NON_HEX_RE = re.compile(r"[^0-9a-f]")
 

@@ -341,7 +341,6 @@ async def test_close_connection():
             assert self.closed is False, "Already closed"
             self.closed = True
 
-
     class DummyServer(object):
         def __init__(self):
             self.closed = False

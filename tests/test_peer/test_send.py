@@ -10,7 +10,6 @@ from aioax25.frame import (
 from .peer import DummyAX25Peer
 from ..mocks import DummyStation
 
-
 # UA reception
 
 

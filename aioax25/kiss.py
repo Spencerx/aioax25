@@ -18,7 +18,6 @@ from sys import exc_info
 from ._loop import EventLoopConsumer
 from ._future import FutureWrapperMixin
 
-
 # Constants
 
 
@@ -358,7 +357,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
         and add it to the transmit buffer.
         """
         try:
-            (rawframe, future) = self._tx_queue.pop(0)
+            rawframe, future = self._tx_queue.pop(0)
         except IndexError:
             # TX queue is empty
             return
@@ -374,7 +373,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
         underlying device.  If more than one frame is present, schedule
         ourselves again with the IO loop.
         """
-        (frame, self._rx_buffer) = extract_frame(self._rx_buffer, self._log)
+        frame, self._rx_buffer = extract_frame(self._rx_buffer, self._log)
 
         # Stop here if we had no frame
         if frame is None:
@@ -456,7 +455,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
             self._loop.call_later(0.5, self._check_open)
         except:
             self._log.error("Failed to initialise KISS mode", exc_info=1)
-            (ex_type, ex_value, ex_traceback) = exc_info()
+            ex_type, ex_value, ex_traceback = exc_info()
             self._mark_open(ex_value)
             self._on_fail("open", (ex_type, ex_value, ex_traceback))
             raise
@@ -492,7 +491,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
         try:
             self._open()
         except:
-            (ex_type, ex_value, ex_traceback) = exc_info()
+            ex_type, ex_value, ex_traceback = exc_info()
             self._mark_open(ex_value)
             self._on_fail("open", (ex_type, ex_value, ex_traceback))
             raise
@@ -507,7 +506,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
             self._log.debug(
                 "Failed to send data: %s", b2a_hex(data).decode(), exc_info=1
             )
-            (ex_type, ex_value, ex_traceback) = exc_info()
+            ex_type, ex_value, ex_traceback = exc_info()
             if future:
                 future.set_exception(ex_value)
             self._on_fail("send", exc_info())
@@ -529,7 +528,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
             ), "Did not find sent data in the transmit buffer!"
             self._tx_buffer = self._tx_buffer[len(data) :]
         except:
-            (ex_type, ex_value, ex_traceback) = exc_info()
+            ex_type, ex_value, ex_traceback = exc_info()
             if future:
                 future.set_exception(ex_value)
             self._on_fail("send", exc_info())
@@ -574,7 +573,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
         try:
             self._close()
         except:
-            (ex_type, ex_value, ex_traceback) = exc_info()
+            ex_type, ex_value, ex_traceback = exc_info()
             self._mark_closed(ex_value)
             self._on_fail("close", (ex_type, ex_value, ex_traceback))
             raise
@@ -587,7 +586,7 @@ class BaseKISSDevice(FutureWrapperMixin, EventLoopConsumer):
         """
         Handle a critical device failure.  Mark the device as failed.
         """
-        (ex_t, ex_v, _) = exc_info
+        ex_t, ex_v, _ = exc_info
         self._log.warning(
             "KISS device has failed: %s: %s", ex_t.__name__, ex_v
         )

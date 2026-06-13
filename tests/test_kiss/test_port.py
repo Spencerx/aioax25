@@ -28,7 +28,7 @@ def test_send():
     port.send(b"this is a test frame")
 
     assert len(dev.sent) == 1
-    (last, last_future) = dev.sent.pop(0)
+    last, last_future = dev.sent.pop(0)
 
     assert last_future is None
     assert isinstance(last, KISSCmdData)

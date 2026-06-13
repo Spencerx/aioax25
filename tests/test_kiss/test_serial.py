@@ -212,7 +212,7 @@ async def test_open_fail():
     failure = failures.pop(0)
 
     assert failure.pop("action") == "open"
-    (ex_c, ex_v, _) = failure.pop("exc_info")
+    ex_c, ex_v, _ = failure.pop("exc_info")
     assert ex_c is IOError
     assert str(ex_v) == "Open device failed"
 

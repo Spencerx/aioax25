@@ -21,7 +21,7 @@ def test_decode_no_digis():
     """
     Test we can decode an AX.25 frame without digipeaters.
     """
-    (header, data) = AX25FrameHeader.decode(
+    header, data = AX25FrameHeader.decode(
         from_hex(
             "ac 96 68 84 ae 92 e0"  # Destination
             "ac 96 68 9a a6 98 61"  # Source
@@ -38,7 +38,7 @@ def test_decode_legacy():
     """
     Test we can decode an AX.25 1.x frame.
     """
-    (header, data) = AX25FrameHeader.decode(
+    header, data = AX25FrameHeader.decode(
         from_hex(
             "ac 96 68 84 ae 92 e0"  # Destination
             "ac 96 68 9a a6 98 e1"  # Source
@@ -85,7 +85,7 @@ def test_decode_with_1digi():
     """
     Test we can decode an AX.25 frame with one digipeater.
     """
-    (header, data) = AX25FrameHeader.decode(
+    header, data = AX25FrameHeader.decode(
         from_hex(
             "ac 96 68 84 ae 92 e0"  # Destination
             "ac 96 68 9a a6 98 60"  # Source
@@ -103,7 +103,7 @@ def test_decode_with_2digis():
     """
     Test we can decode an AX.25 frame with two digipeaters.
     """
-    (header, data) = AX25FrameHeader.decode(
+    header, data = AX25FrameHeader.decode(
         from_hex(
             "ac 96 68 84 ae 92 e0"  # Destination
             "ac 96 68 9a a6 98 60"  # Source

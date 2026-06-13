@@ -14,7 +14,7 @@ def compress(value, length):
 
     # Figure out the bytes
     for pos in range(length):
-        (div, rem) = divmod(value, BYTE_VALUE_RADIX ** (length - pos - 1))
+        div, rem = divmod(value, BYTE_VALUE_RADIX ** (length - pos - 1))
         bvalue[pos] += int(div)
         value = rem
 

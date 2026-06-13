@@ -240,7 +240,7 @@ async def test_open_multiple():
     # We should have just one call, but our future object will be queued.
     assert kissdev.open_calls == 1
     assert len(kissdev._open_queue._futures) > 0
-    (f, _) = kissdev._open_queue._futures.pop(0)
+    f, _ = kissdev._open_queue._futures.pop(0)
     assert f is future
 
     assert failures == []
@@ -269,7 +269,7 @@ async def test_open_async():
     # We should have just one call, the future we were given should be queued.
     assert kissdev.open_calls == 1
     assert len(kissdev._open_queue._futures) > 0
-    (f, _) = kissdev._open_queue._futures.pop(0)
+    f, _ = kissdev._open_queue._futures.pop(0)
     assert f is future
 
     assert failures == []
@@ -304,7 +304,7 @@ def test_open_fail():
     failure = failures.pop(0)
 
     assert failure.pop("action") == "open"
-    (ex_c, ex_v, _) = failure.pop("exc_info")
+    ex_c, ex_v, _ = failure.pop("exc_info")
     assert ex_c is DummyKISSDeviceError
     assert ex_v is open_ex
 
@@ -368,7 +368,7 @@ async def test_close_multiple():
     # We should have just one call, the future we were given should be queued.
     assert kissdev.close_calls == 1
     assert len(kissdev._close_queue._futures) > 0
-    (f, _) = kissdev._close_queue._futures.pop(0)
+    f, _ = kissdev._close_queue._futures.pop(0)
     assert f is future
 
     assert failures == []
@@ -401,7 +401,7 @@ async def test_close_async():
 
     assert kissdev.close_calls == 1
     assert len(kissdev._close_queue._futures) > 0
-    (f, _) = kissdev._close_queue._futures.pop(0)
+    f, _ = kissdev._close_queue._futures.pop(0)
     assert f is future
 
     assert failures == []
@@ -441,7 +441,7 @@ def test_close_fail():
     failure = failures.pop(0)
 
     assert failure.pop("action") == "close"
-    (ex_c, ex_v, _) = failure.pop("exc_info")
+    ex_c, ex_v, _ = failure.pop("exc_info")
     assert ex_c is DummyKISSDeviceError
     assert ex_v is close_ex
 
@@ -468,7 +468,7 @@ def test_close_reset():
     assert kissdev._tx_queue == [(b"\xff", None)]
 
     # A call to _send_data should be pending
-    (_, func) = loop.calls.pop()
+    _, func = loop.calls.pop()
     assert func == kissdev._send_data
 
 
@@ -502,7 +502,7 @@ def test_receive():
     assert bytes(kissdev._rx_buffer) == b"test incoming data"
 
     # A call to _receive_frame should be pending
-    (_, func) = loop.calls.pop()
+    _, func = loop.calls.pop()
     assert func == kissdev._receive_frame
 
 
@@ -524,7 +524,7 @@ def test_receive_opening():
     assert bytes(kissdev._rx_buffer) == b"test incoming data"
 
     # A call to _check_open should be pending
-    (_, func) = loop.calls.pop()
+    _, func = loop.calls.pop()
     assert func == kissdev._check_open
 
 
@@ -611,7 +611,7 @@ def test_receive_frame_single():
 
     # We should have one call to _dispatch_rx_frame
     assert len(loop.calls) == 1
-    (_, func, frame) = loop.calls.pop(0)
+    _, func, frame = loop.calls.pop(0)
     assert func == kissdev._dispatch_rx_frame
     assert isinstance(frame, KISSCommand)
     assert frame.port == 0
@@ -636,7 +636,7 @@ def test_receive_frame_more():
     assert len(loop.calls) == 2
 
     # We should have one call to _dispatch_rx_frame
-    (_, func, frame) = loop.calls.pop(0)
+    _, func, frame = loop.calls.pop(0)
     assert func == kissdev._dispatch_rx_frame
     assert isinstance(frame, KISSCommand)
     assert frame.port == 0
@@ -644,7 +644,7 @@ def test_receive_frame_more():
     assert frame.payload == b"a single KISS frame"
 
     # We should have another to _receive_frame itself.
-    (_, func) = loop.calls.pop(0)
+    _, func = loop.calls.pop(0)
     assert func == kissdev._receive_frame
 
 
@@ -735,7 +735,7 @@ def test_send():
     assert kissdev._tx_queue == [(b"testing 1 2 3 4", None)]
 
     # We should have a call to _send_data scheduled.
-    (_, func) = loop.calls.pop(0)
+    _, func = loop.calls.pop(0)
     assert func == kissdev._send_data
 
 
@@ -770,7 +770,7 @@ def test_send_future():
     assert kissdev._tx_queue == [(b"testing 1 2 3 4", future)]
 
     # We should have a call to _send_data scheduled.
-    (_, func) = loop.calls.pop(0)
+    _, func = loop.calls.pop(0)
     assert func == kissdev._send_data
 
 
@@ -903,7 +903,7 @@ def test_send_data_fail():
     failure = failures.pop(0)
 
     assert failure.pop("action") == "send"
-    (ex_c, ex_v, _) = failure.pop("exc_info")
+    ex_c, ex_v, _ = failure.pop("exc_info")
     assert ex_c is DummyKISSDeviceError
     assert ex_v is send_ex
 
@@ -947,7 +947,7 @@ async def test_send_data_fail_future():
     failure = failures.pop(0)
 
     assert failure.pop("action") == "send"
-    (ex_c, ex_v, _) = failure.pop("exc_info")
+    ex_c, ex_v, _ = failure.pop("exc_info")
     assert ex_c is DummyKISSDeviceError
     assert ex_v is send_ex
 
@@ -976,7 +976,7 @@ def test_send_data_block_size_exceed_reschedule():
 
     # There should be a pending call to send more:
     assert len(loop.calls) == 1
-    (calltime, callfunc) = loop.calls.pop(0)
+    calltime, callfunc = loop.calls.pop(0)
 
     # It'll be roughly in a second's time calling the same function
     assert (calltime - loop.time()) > (0.990)
@@ -1035,7 +1035,7 @@ def test_send_data_all_sent_before_close():
 
     # There should be a pending call to send more:
     assert len(loop.calls) == 1
-    (calltime, callfunc) = loop.calls.pop(0)
+    calltime, callfunc = loop.calls.pop(0)
 
     # It'll be roughly in a second's time calling the same function
     assert (calltime - loop.time()) > (0.990)
@@ -1218,5 +1218,5 @@ def test_check_open():
     kissdev._check_open()
 
     # A call to _send_kiss_cmd should be pending
-    (_, func) = loop.calls.pop()
+    _, func = loop.calls.pop()
     assert func == kissdev._send_kiss_cmd

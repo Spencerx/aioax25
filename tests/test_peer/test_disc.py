@@ -15,7 +15,6 @@ from aioax25.version import AX25Version
 from .peer import DummyAX25Peer
 from ..mocks import DummyStation, DummyTimeout
 
-
 # DISC reception handling
 
 
@@ -54,7 +53,7 @@ def test_peer_recv_disc():
 
     # This was a request, so there should be a reply waiting
     assert len(interface.transmit_calls) == 1
-    (tx_args, tx_kwargs) = interface.transmit_calls.pop(0)
+    tx_args, tx_kwargs = interface.transmit_calls.pop(0)
 
     # This should be a UA in reply to the DISC
     assert tx_kwargs == {"callback": None}
@@ -99,7 +98,7 @@ def test_peer_send_disc():
 
     # There should be our outgoing request here
     assert len(interface.transmit_calls) == 1
-    (tx_args, tx_kwargs) = interface.transmit_calls.pop(0)
+    tx_args, tx_kwargs = interface.transmit_calls.pop(0)
 
     # This should be a DISC
     assert tx_kwargs == {"callback": None}

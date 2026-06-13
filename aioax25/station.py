@@ -7,7 +7,6 @@ This implements the base-level AX.25 logic for a station listening at a given
 SSID.
 """
 
-
 import logging
 import asyncio
 from .signal import Signal

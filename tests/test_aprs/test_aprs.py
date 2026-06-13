@@ -899,7 +899,7 @@ def test_test_or_add_frame_first():
 
     # A clean-up should have been scheduled.
     assert len(ax25int._loop.calls) == 1
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert callfunc == aprsint._schedule_dedup_cleanup
 
 
@@ -971,7 +971,7 @@ def test_test_or_add_frame_expired():
 
     # A clean-up should have been scheduled.
     assert len(ax25int._loop.calls) == 1
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert callfunc == aprsint._schedule_dedup_cleanup
 
 
@@ -1025,7 +1025,7 @@ def test_schedule_dedup_cleanup_oldest_future():
 
     # A clean-up should have been scheduled.
     assert len(ax25int._loop.calls) == 1
-    (calltime, callfunc) = ax25int._loop.calls.pop(0)
+    calltime, callfunc = ax25int._loop.calls.pop(0)
 
     # Should be scheduled for the earliest expiry
     assert (calltime - now) < (1.01)
@@ -1051,7 +1051,7 @@ def test_schedule_dedup_cleanup_oldest_past():
 
     # A clean-up should have been scheduled.
     assert len(ax25int._loop.calls) == 1
-    (calltime, callfunc) = ax25int._loop.calls.pop(0)
+    calltime, callfunc = ax25int._loop.calls.pop(0)
 
     # Should be scheduled pretty much now
     assert (calltime - now) < (0.01)
@@ -1083,7 +1083,7 @@ def test_dedup_cleanup_expired():
 
     # There should be a re-schedule pending
     assert len(ax25int._loop.calls) == 1
-    (calltime, callfunc) = ax25int._loop.calls.pop(0)
+    calltime, callfunc = ax25int._loop.calls.pop(0)
 
     # Should be scheduled pretty much now
     assert (calltime - now) < (0.01)
@@ -1218,10 +1218,10 @@ def test_on_receive_pass_to_router():
     # other to our superclass
     assert len(ax25int._loop.calls) == 2
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert callfunc == aprsint._schedule_dedup_cleanup
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == super(APRSInterface, aprsint)._on_receive
 
@@ -1250,14 +1250,14 @@ def test_on_receive_addressed():
     # other to our superclass, the third to our received_address_msg signal.
     assert len(ax25int._loop.calls) == 3
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert callfunc == aprsint._schedule_dedup_cleanup
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == super(APRSInterface, aprsint)._on_receive
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == aprsint.received_addressed_msg.emit
 
@@ -1286,14 +1286,14 @@ def test_on_receive_addressed_replyack():
     # other to our superclass, the third to our received_address_msg signal.
     assert len(ax25int._loop.calls) == 3
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert callfunc == aprsint._schedule_dedup_cleanup
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == super(APRSInterface, aprsint)._on_receive
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == aprsint.received_addressed_msg.emit
 
@@ -1322,10 +1322,10 @@ def test_on_receive_unsol_ackrej():
     # other to our superclass.  We don't pass the message out otherwise.
     assert len(ax25int._loop.calls) == 2
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert callfunc == aprsint._schedule_dedup_cleanup
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == super(APRSInterface, aprsint)._on_receive
 
@@ -1359,14 +1359,14 @@ def test_on_receive_sol_ackrej():
     # _on_response method.
     assert len(ax25int._loop.calls) == 3
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert callfunc == aprsint._schedule_dedup_cleanup
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == super(APRSInterface, aprsint)._on_receive
 
-    (_, callfunc, msg) = ax25int._loop.calls.pop(0)
+    _, callfunc, msg = ax25int._loop.calls.pop(0)
     assert callfunc == handler._on_response
     assert bytes(frame) == bytes(msg)
 
@@ -1400,19 +1400,19 @@ def test_on_receive_sol_replyack():
     # and finally the incoming message should be emitted like a normal message.
     assert len(ax25int._loop.calls) == 4
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert callfunc == aprsint._schedule_dedup_cleanup
 
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == super(APRSInterface, aprsint)._on_receive
 
-    (_, callfunc, msg) = ax25int._loop.calls.pop(0)
+    _, callfunc, msg = ax25int._loop.calls.pop(0)
     assert callfunc == handler._on_response
     assert bytes(frame) == bytes(msg)
 
     # The message should also have been treated as a new incoming message.
-    (_, callfunc) = ax25int._loop.calls.pop(0)
+    _, callfunc = ax25int._loop.calls.pop(0)
     assert isinstance(callfunc, partial)
     assert callfunc.func == aprsint.received_addressed_msg.emit
 

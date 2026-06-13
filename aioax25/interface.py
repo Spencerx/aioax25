@@ -179,7 +179,7 @@ class AX25Interface(Router, FutureWrapperMixin, EventLoopConsumer):
         self._tx_pending = None
 
         try:
-            (frame, future) = self._tx_queue.pop(0)
+            frame, future = self._tx_queue.pop(0)
         except IndexError:
             self._log.debug("No traffic to transmit")
             return

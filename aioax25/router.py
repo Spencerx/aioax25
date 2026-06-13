@@ -47,7 +47,7 @@ class Router(object):
                 "callsign must be a string (use " "regex=True for regex)"
             )
         if regex:
-            (_, call_receivers) = self._receiver_re.setdefault(
+            _, call_receivers = self._receiver_re.setdefault(
                 callsign, (re.compile(callsign), {})
             )
         else:
@@ -69,7 +69,7 @@ class Router(object):
         try:
             if regex:
                 receivers = self._receiver_re
-                (_, call_receivers) = receivers[callsign]
+                _, call_receivers = receivers[callsign]
             else:
                 receivers = self._receiver_str
                 call_receivers = receivers[callsign]

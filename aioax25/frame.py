@@ -92,7 +92,7 @@ class AX25Frame(object):
             data = data.frame_payload
         else:
             # We were given raw data.
-            (header, data) = AX25FrameHeader.decode(bytes(data))
+            header, data = AX25FrameHeader.decode(bytes(data))
 
         if not data:
             raise ValueError("Insufficient packet data")
@@ -2052,7 +2052,7 @@ class AX25ExchangeIdentificationFrame(AX25UnnumberedFrame):
 
         parameters = []
         while data:
-            (param, data) = AX25XIDParameter.decode(data)
+            param, data = AX25XIDParameter.decode(data)
             parameters.append(param)
 
         return cls(

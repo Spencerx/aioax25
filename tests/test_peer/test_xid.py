@@ -759,7 +759,7 @@ def test_peer_on_receive_xid_ax20_mode():
 
     # One frame sent
     assert len(interface.transmit_calls) == 1
-    (tx_args, tx_kwargs) = interface.transmit_calls.pop(0)
+    tx_args, tx_kwargs = interface.transmit_calls.pop(0)
 
     # This should be a FRMR
     assert tx_kwargs == {"callback": None}
@@ -994,7 +994,7 @@ def test_peer_on_receive_xid_reply():
 
     # This was a request, so there should be a reply waiting
     assert len(interface.transmit_calls) == 1
-    (tx_args, tx_kwargs) = interface.transmit_calls.pop(0)
+    tx_args, tx_kwargs = interface.transmit_calls.pop(0)
 
     # This should be a XID
     assert tx_kwargs == {"callback": None}
@@ -1076,6 +1076,6 @@ def test_peer_on_receive_xid_relay():
     assert len(xid_events) == 1
 
     # It should be passed our handler
-    (xid_args, xid_kwargs) = xid_events.pop(0)
+    xid_args, xid_kwargs = xid_events.pop(0)
     (xid_frame,) = xid_args
     assert frame is xid_frame

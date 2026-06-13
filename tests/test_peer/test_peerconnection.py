@@ -60,7 +60,7 @@ def test_peerconn_go_peer_ax20_stn():
 
     # Station should have been asked to send a SABM
     assert len(peer.transmit_calls) == 1
-    (frame, callback) = peer.transmit_calls.pop(0)
+    frame, callback = peer.transmit_calls.pop(0)
 
     # Frame should be a SABM frame
     assert frame == "sabm"
@@ -94,7 +94,7 @@ def test_peerconn_go_peer_ax20_peer():
 
     # Station should have been asked to send a SABM
     assert len(peer.transmit_calls) == 1
-    (frame, callback) = peer.transmit_calls.pop(0)
+    frame, callback = peer.transmit_calls.pop(0)
 
     # Frame should be a SABM frame
     assert frame == "sabm"
@@ -130,7 +130,7 @@ def test_peerconn_go_prenegotiated():
 
     # Station should have been asked to send a SABM
     assert len(peer.transmit_calls) == 1
-    (frame, callback) = peer.transmit_calls.pop(0)
+    frame, callback = peer.transmit_calls.pop(0)
 
     # Frame should be a SABM frame
     assert frame == "sabm"
@@ -255,7 +255,7 @@ def test_peerconn_on_negotiated_xid():
 
     # Station should have been asked to send a SABM
     assert len(peer.transmit_calls) == 1
-    (frame, callback) = peer.transmit_calls.pop(0)
+    frame, callback = peer.transmit_calls.pop(0)
 
     # Frame should be a SABM frame
     assert frame == "sabm"
@@ -311,7 +311,7 @@ def test_peerconn_receive_frmr():
 
     # Station should have been asked to send a DM
     assert len(peer.transmit_calls) == 1
-    (frame, callback) = peer.transmit_calls.pop(0)
+    frame, callback = peer.transmit_calls.pop(0)
 
     # Frame should be a DM frame
     assert frame == "dm"
@@ -375,7 +375,7 @@ def test_peerconn_on_timeout_first():
 
     # Station should have been asked to send an XID
     assert len(peer.transmit_calls) == 1
-    (frame, callback) = peer.transmit_calls.pop(0)
+    frame, callback = peer.transmit_calls.pop(0)
 
     # Frame should be a SABM frame
     assert frame == "sabm"

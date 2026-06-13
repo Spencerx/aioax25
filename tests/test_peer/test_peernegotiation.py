@@ -34,7 +34,7 @@ def test_peerneg_go():
 
     # Station should have been asked to send an XID
     assert len(peer.transmit_calls) == 1
-    (frame, callback) = peer.transmit_calls.pop(0)
+    frame, callback = peer.transmit_calls.pop(0)
 
     # Frame should be a test frame, with CR=True
     assert frame == "xid:cr=True"
@@ -221,7 +221,7 @@ def test_peerneg_on_timeout_first():
 
     # Station should have been asked to send an XID
     assert len(peer.transmit_calls) == 1
-    (frame, callback) = peer.transmit_calls.pop(0)
+    frame, callback = peer.transmit_calls.pop(0)
 
     # Frame should be a test frame, with CR=True
     assert frame == "xid:cr=True"

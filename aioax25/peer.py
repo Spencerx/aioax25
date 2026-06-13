@@ -61,7 +61,6 @@ from .frame import (
     AX25_22_DEFAULT_XID_RETRIES,
 )
 
-
 # AX25RejectMode precedence:
 _REJECT_MODE_PRECEDENCE = {"selective_rr": 2, "selective": 1, "implicit": 0}
 
@@ -1567,7 +1566,7 @@ class AX25Peer(object):
         # "If it has an I frame to send, that I frame may be sent with the
         # transmitted N(R) equal to its receive state variable V(R) (thus
         # acknowledging the received frame)."
-        (pid, payload) = self._pending_iframes[ns]
+        pid, payload = self._pending_iframes[ns]
         self._log.debug(
             "Sending I-frame N(R)=%d N(S)=%d PID=0x%02x Payload=%r",
             self._recv_state,

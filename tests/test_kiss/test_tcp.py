@@ -124,7 +124,7 @@ async def test_open_connection_fail():
         failure = failures.pop(0)
 
         assert failure.pop("action") == "open"
-        (ex_c, ex_v, _) = failure.pop("exc_info")
+        ex_c, ex_v, _ = failure.pop("exc_info")
         assert ex_c is IOError
         assert str(ex_v) == "Connection failed"
     finally:
@@ -155,8 +155,9 @@ async def test_send_raw_data_no_transport():
         )
 
         # We have no active transport connected
-        assert device._transport is None, \
-                "Transport is present when it should not be"
+        assert (
+            device._transport is None
+        ), "Transport is present when it should not be"
 
         # Try sending raw data, nothing should happen
         device._send_raw_data(b"boo!")
@@ -191,7 +192,6 @@ async def test_send_raw_data_write_failed():
             self.written += data
             raise TransportWriteError()
 
-
     try:
         device = kiss.TCPKISSDevice(
             host="localhost",
@@ -201,8 +201,9 @@ async def test_send_raw_data_write_failed():
         )
 
         # We have no active transport connected
-        assert device._transport is None, \
-                "Transport is present when it should not be"
+        assert (
+            device._transport is None
+        ), "Transport is present when it should not be"
 
         # Inject a transport
         device._transport = DummyTransport()
