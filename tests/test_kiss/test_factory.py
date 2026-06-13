@@ -8,6 +8,7 @@ from aioax25.kiss import (
     SerialKISSDevice,
     SubprocKISSDevice,
     TCPKISSDevice,
+    TCPKISSServer,
     make_device,
 )
 
@@ -48,6 +49,25 @@ def test_tcp_kiss():
         sock=None,
         local_addr=None,
         server_hostname=None,
+    )
+
+
+def test_tcp_server():
+    """
+    Test we can create a ``TCPKISSServer``.
+    """
+    dev = make_device(type="tcp_server", host="localhost", port=10000)
+    assert isinstance(dev, TCPKISSServer)
+    assert dev._conn_args == dict(
+        host="localhost",
+        port=10000,
+        ssl=None,
+        family=0,
+        flags=0,
+        sock=None,
+        backlog=1,
+        reuse_address=None,
+        reuse_port=None,
     )
 
 
