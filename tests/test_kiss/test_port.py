@@ -4,6 +4,7 @@
 KISS command unit tests
 """
 
+from aioax25.frame import AX25TransportState
 from aioax25.kiss import KISSPort, KISSCmdData, KISSCommand
 import logging
 
@@ -11,6 +12,7 @@ import logging
 class DummyKISSDevice(object):
     def __init__(self):
         self.sent = []
+        self.state = AX25TransportState.OPEN
 
     def _send(self, frame, future):
         self.sent.append((frame, future))
@@ -67,3 +69,18 @@ def test_receive_frame_filter_nondata():
 
     # We should not have received that frame
     assert len(sent) == 0
+
+
+def test_state():
+    """
+    Test that .state returns the device's state
+    """
+    dev = DummyKISSDevice()
+    port = KISSPort(dev, 5, logging.getLogger("port"))
+
+    assert port.state is dev.state, "States do not match"
+
+    # Change the state
+    dev.state = AX25TransportState.CLOSED
+
+    assert port.state is dev.state, "States do not match"
