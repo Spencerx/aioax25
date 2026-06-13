@@ -9,7 +9,7 @@ SSID.
 
 import logging
 import asyncio
-from .signal import Signal
+from ._signal import Signal
 import weakref
 
 from .frame import AX25Address, AX25Path, AX25TestFrame

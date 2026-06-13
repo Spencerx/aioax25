@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from aioax25.signal import Signal
+from aioax25._signal import Signal
 from aioax25.interface import AX25Interface
 from aioax25.frame import AX25UnnumberedInformationFrame
 from aioax25._loop import LOOPMANAGER

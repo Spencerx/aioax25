@@ -4,7 +4,7 @@
 Tests for signalslot wrappers
 """
 
-from aioax25.signal import Signal, Slot
+from aioax25._signal import Signal, Slot
 import gc
 
 

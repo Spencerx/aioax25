@@ -2,7 +2,7 @@
 
 from aioax25.aprs.uidigi import APRSDigipeater
 from aioax25.frame import AX25UnnumberedInformationFrame, AX25Address
-from aioax25.signal import Signal
+from aioax25._signal import Signal
 
 import logging
 

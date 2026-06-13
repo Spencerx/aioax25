@@ -7,7 +7,7 @@ APRS messaging handler.
 import re
 import weakref
 import random
-from ..signal import Signal
+from .._signal import Signal
 from enum import Enum
 
 from ..frame import AX25Address

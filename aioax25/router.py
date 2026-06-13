@@ -5,7 +5,7 @@ AX.25 Interface handler
 """
 
 from functools import partial
-from .signal import Signal
+from ._signal import Signal
 import re
 
 from .frame import AX25Frame

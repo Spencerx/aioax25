@@ -6,7 +6,7 @@ AX.25 Station Peer interface.
 This is used as the "proxy" for interacting with a remote AX.25 station.
 """
 
-from .signal import Signal
+from ._signal import Signal
 
 import weakref
 import enum

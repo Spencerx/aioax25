@@ -45,7 +45,7 @@ import re
 import time
 import enum
 from collections.abc import Sequence
-from .signal import Signal
+from ._signal import Signal
 
 from . import uint
 

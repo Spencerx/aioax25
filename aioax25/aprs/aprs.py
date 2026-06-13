@@ -7,7 +7,7 @@ APRS messaging handler.
 import logging
 from functools import partial
 
-from ..signal import Signal
+from .._signal import Signal
 from hashlib import sha256
 
 from .router import APRSRouter

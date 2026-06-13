@@ -8,7 +8,7 @@ KISS-based TNCs, managing the byte stuffing/unstuffing.
 from asyncio import Protocol, ensure_future
 from serial_asyncio import create_serial_connection
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
-from .signal import Signal
+from ._signal import Signal
 from .futurequeue import FutureQueue
 from binascii import b2a_hex
 import time
