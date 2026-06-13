@@ -74,7 +74,7 @@ jobs:
           python -m pytest --cov=aioax25 --cov-report=term-missing
       - name: Coveralls
         if: ${{ !inputs.skip-coverage }}
-        uses: coverallsapp/github-action@v2
+        uses: coverallsapp/github-action@v2.3.6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: ./coverage.lcov
