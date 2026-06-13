@@ -226,3 +226,153 @@ async def test_on_connect_not_closed():
     assert (
         device._transport is transport
     ), "Device did not store received transport object"
+
+
+@pytest.mark.asyncio
+async def test_on_close_no_exc():
+    LOOPMANAGER.loop = None
+
+    loop = get_event_loop()
+
+    class DummyKISSTransport(object):
+        def write(self, data):
+            pass
+
+    device = kiss.TCPKISSServer(
+        port=5432,
+        loop=loop,
+        log=logging.getLogger(__name__),
+    )
+
+    assert (
+        device._state is kiss.KISSDeviceState.CLOSED
+    ), "Device is not CLOSED"
+    assert (
+        device._transport is None
+    ), "Device has a transport when it shouldn't"
+    assert (
+        device._open_queue is None
+    ), "Device has a queue for opening the port pending when it shouldn't"
+
+    # Inject state
+    device._state = kiss.KISSDeviceState.OPEN
+
+    transport = DummyKISSTransport()
+    device._on_close()
+
+    assert (
+        device._state is kiss.KISSDeviceState.OPENING
+    ), "Device is not OPENING"
+    assert (
+        device._open_queue is not None
+    ), "Device has no 'opening' queue pending"
+    assert (
+        device._transport is not transport
+    ), "Device did not drop the transport object"
+    assert (
+        device._transport is None
+    ), "Device has another transport reference when it shouldn't"
+
+
+@pytest.mark.asyncio
+async def test_on_close_with_exc():
+    LOOPMANAGER.loop = None
+
+    loop = get_event_loop()
+
+    class DummyKISSTransport(object):
+        def write(self, data):
+            pass
+
+    device = kiss.TCPKISSServer(
+        port=5432,
+        loop=loop,
+        log=logging.getLogger(__name__),
+    )
+
+    assert (
+        device._state is kiss.KISSDeviceState.CLOSED
+    ), "Device is not CLOSED"
+    assert (
+        device._transport is None
+    ), "Device has a transport when it shouldn't"
+    assert (
+        device._open_queue is None
+    ), "Device has a queue for opening the port pending when it shouldn't"
+
+    # Inject state
+    device._state = kiss.KISSDeviceState.OPEN
+
+    transport = DummyKISSTransport()
+    device._on_close(IOError("Whoopsie!"))
+
+    assert (
+        device._state is kiss.KISSDeviceState.OPENING
+    ), "Device is not OPENING"
+    assert (
+        device._open_queue is not None
+    ), "Device has no 'opening' queue pending"
+    assert (
+        device._transport is not transport
+    ), "Device did not drop the transport object"
+    assert (
+        device._transport is None
+    ), "Device has another transport reference when it shouldn't"
+
+
+@pytest.mark.asyncio
+async def test_close_connection():
+    LOOPMANAGER.loop = None
+
+    loop = get_event_loop()
+
+    class DummyKISSTransport(object):
+        def __init__(self):
+            self.flushed = False
+            self.closed = False
+
+        def flush(self):
+            assert self.flushed is False, "Already flushed"
+            assert self.closed is False, "Already closed"
+            self.flushed = True
+
+        def close(self):
+            assert self.flushed is True, "Not yet flushed"
+            assert self.closed is False, "Already closed"
+            self.closed = True
+
+
+    class DummyServer(object):
+        def __init__(self):
+            self.closed = False
+
+        def close(self):
+            assert self.closed is False, "Already closed"
+            self.closed = True
+
+    device = kiss.TCPKISSServer(
+        port=5432,
+        loop=loop,
+        log=logging.getLogger(__name__),
+    )
+
+    assert (
+        device._state is kiss.KISSDeviceState.CLOSED
+    ), "Device is not CLOSED"
+    assert (
+        device._transport is None
+    ), "Device has a transport when it shouldn't"
+
+    # Inject state
+    device._state = kiss.KISSDeviceState.OPEN
+
+    transport = DummyKISSTransport()
+    server = DummyServer()
+    device._transport = transport
+    device._server = server
+
+    device._close_connection()
+
+    assert transport.flushed is True, "Transport was not flushed."
+    assert transport.closed is True, "Transport was not closed."
+    assert server.closed is True, "Server was not closed."
