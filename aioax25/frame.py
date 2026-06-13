@@ -45,6 +45,7 @@ import re
 import time
 import enum
 from collections.abc import Sequence
+from .signal import Signal
 
 from . import uint
 
@@ -2693,3 +2694,54 @@ class AX25Address(object):
         """
 
         return self.normcopy()
+
+
+class AX25TransportState(enum.Enum):
+    """
+    States permitted by an AX.25 transport:
+    - CLOSED: Transport is closed
+    - INIT: Transport just opened, initialisation steps may be in progress.
+    - OPEN: Transport is open and ready to pass traffic.
+    - CLOSING: Close instruction just received.  Winding up transport
+      operations.
+    - FAILED: A critical error has occurred and the transport is now no longer
+      functional.
+    """
+
+    CLOSED = 0
+    OPENING = 1
+    OPEN = 2
+    CLOSING = 3
+    FAILED = -1
+
+
+class AX25FrameTransport(object):
+    """
+    An AX25FrameTransport represents a transport interface for conveying
+    AX.25 frames.  Examples being the KISS port on a KISS or MKISS TNC,
+    or a UDP socket implementing AXUDP.
+
+    This base class is an abstract class.
+    """
+
+    def __init__(self):
+        """
+        Create a new transport interface
+        """
+        # Signal for receiving packets
+        # Keyword arguments:
+        # - frame: the raw KISS frame as a `bytes()` object
+        self.received = Signal()
+
+    @property
+    def state(self): # pragma: no cover
+        """
+        Return the current state of the transport.
+        """
+        return AX25TransportState.CLOSED
+
+    def send(self, frame, future=None):  # pragma: no cover
+        """
+        Send a raw AX.25 frame to the TNC via this transport interface.
+        """
+        raise NotImplementedError
