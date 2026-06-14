@@ -2734,7 +2734,7 @@ class AX25FrameTransport(object):
         self.received = Signal()
 
     @property
-    def state(self): # pragma: no cover
+    def state(self):  # pragma: no cover
         """
         Return the current state of the transport.
         """
